@@ -1,0 +1,34 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: investments-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/financialapp?currentSchema=investments}
+    username: ${DB_USERNAME:financialapp}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: investments
+  flyway:
+    schemas: investments
+    default-schema: investments
+    locations: classpath:db/migration
+
+iol:
+  base-url: ${IOL_BASE_URL:https://api.invertironline.com}
+  username: ${IOL_USERNAME:}
+  password: ${IOL_PASSWORD:}
+  price-refresh-cron: ${IOL_PRICE_REFRESH_CRON:0 */15 10-17 * * MON-FRI}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
