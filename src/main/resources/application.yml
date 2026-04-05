@@ -32,3 +32,5 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+  server:
+    url: ${GATEWAY_URL:http://localhost:8080}
