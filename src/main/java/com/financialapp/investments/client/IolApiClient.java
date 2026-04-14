@@ -22,8 +22,8 @@ public class IolApiClient {
     private final IolProperties properties;
     private final RestTemplate restTemplate;
 
-    private String accessToken;
-    private Instant tokenExpiry;
+    private volatile String accessToken;
+    private volatile Instant tokenExpiry;
 
     public IolApiClient(IolProperties properties) {
         this.properties = properties;
@@ -57,7 +57,7 @@ public class IolApiClient {
         }
     }
 
-    private void ensureAuthenticated() {
+    private synchronized void ensureAuthenticated() {
         if (accessToken != null && tokenExpiry != null && Instant.now().isBefore(tokenExpiry)) {
             return;
         }

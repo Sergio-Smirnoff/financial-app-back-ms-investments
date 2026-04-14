@@ -1,5 +1,6 @@
 server:
   port: 8086
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -9,6 +10,12 @@ spring:
     username: ${DB_USERNAME:financialapp}
     password: ${DB_PASSWORD:changeme}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,10 +23,19 @@ spring:
     properties:
       hibernate:
         default_schema: investments
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
   flyway:
     schemas: investments
     default-schema: investments
     locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 iol:
   base-url: ${IOL_BASE_URL:https://api.invertironline.com}
@@ -32,8 +48,7 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-  server:
-    url: ${GATEWAY_URL:http://localhost:8080}
+
 
 management:
   endpoints:

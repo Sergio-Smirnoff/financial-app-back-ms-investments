@@ -21,6 +21,8 @@ public class HoldingResponse {
     private BigDecimal quantity;
     private BigDecimal avgPurchasePrice;
     private String currency;
+    private BigDecimal notifyGainThresholdPct;
+    private BigDecimal notifyLossThresholdPct;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

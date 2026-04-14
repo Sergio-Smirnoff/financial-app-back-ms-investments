@@ -8,6 +8,7 @@ import com.financialapp.investments.model.entity.Holding;
 import com.financialapp.investments.repository.AssetPriceRepository;
 import com.financialapp.investments.repository.HoldingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +70,7 @@ public class PortfolioService {
         }).toList();
     }
 
+    @Cacheable(value = "portfolio", key = "#userId")
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse getSummary(Long userId) {
         List<HoldingWithPriceResponse> enriched = getHoldingsWithPrices(userId);

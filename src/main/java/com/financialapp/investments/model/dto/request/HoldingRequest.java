@@ -35,4 +35,10 @@ public class HoldingRequest {
     @NotBlank(message = "Currency is required")
     @Pattern(regexp = "ARS|USD", message = "Currency must be ARS or USD")
     private String currency;
+
+    @PositiveOrZero(message = "Gain threshold must be zero or positive")
+    private BigDecimal notifyGainThresholdPct;
+
+    @PositiveOrZero(message = "Loss threshold must be zero or positive")
+    private BigDecimal notifyLossThresholdPct;
 }

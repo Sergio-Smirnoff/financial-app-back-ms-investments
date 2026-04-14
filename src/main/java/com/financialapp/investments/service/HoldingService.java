@@ -9,6 +9,9 @@ import com.financialapp.investments.model.enums.AssetType;
 import com.financialapp.investments.repository.HoldingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,13 @@ public class HoldingService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public Page<HoldingResponse> list(Long userId, Pageable pageable) {
+        return holdingRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+                .map(holdingMapper::toResponse);
+    }
+
+    @CacheEvict(value = "portfolio", key = "#userId")
     @Transactional
     public HoldingResponse create(Long userId, HoldingRequest request) {
         Holding holding = Holding.builder()
@@ -40,12 +50,15 @@ public class HoldingService {
                 .quantity(request.getQuantity())
                 .avgPurchasePrice(request.getAvgPurchasePrice())
                 .currency(request.getCurrency())
+                .notifyGainThresholdPct(request.getNotifyGainThresholdPct())
+                .notifyLossThresholdPct(request.getNotifyLossThresholdPct())
                 .build();
         Holding saved = holdingRepository.save(holding);
         log.info("Created holding id={} ticker={} for userId={}", saved.getId(), saved.getTicker(), userId);
         return holdingMapper.toResponse(saved);
     }
 
+    @CacheEvict(value = "portfolio", key = "#userId")
     @Transactional
     public HoldingResponse update(Long id, Long userId, HoldingRequest request) {
         Holding holding = findOwnedHolding(id, userId);
@@ -55,9 +68,12 @@ public class HoldingService {
         holding.setQuantity(request.getQuantity());
         holding.setAvgPurchasePrice(request.getAvgPurchasePrice());
         holding.setCurrency(request.getCurrency());
+        holding.setNotifyGainThresholdPct(request.getNotifyGainThresholdPct());
+        holding.setNotifyLossThresholdPct(request.getNotifyLossThresholdPct());
         return holdingMapper.toResponse(holdingRepository.save(holding));
     }
 
+    @CacheEvict(value = "portfolio", key = "#userId")
     @Transactional
     public void delete(Long id, Long userId) {
         Holding holding = findOwnedHolding(id, userId);

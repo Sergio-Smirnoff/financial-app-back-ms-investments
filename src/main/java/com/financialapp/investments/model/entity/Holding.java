@@ -42,6 +42,18 @@ public class Holding {
     @Column(nullable = false, length = 3)
     private String currency;
 
+    @Column(name = "notify_gain_threshold_pct", precision = 5, scale = 2)
+    private BigDecimal notifyGainThresholdPct;
+
+    @Column(name = "notify_loss_threshold_pct", precision = 5, scale = 2)
+    private BigDecimal notifyLossThresholdPct;
+
+    @Column(name = "last_gain_notified_at")
+    private LocalDateTime lastGainNotifiedAt;
+
+    @Column(name = "last_loss_notified_at")
+    private LocalDateTime lastLossNotifiedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
