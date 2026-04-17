@@ -1,6 +1,7 @@
 package com.financialapp.investments.service;
 
 import com.financialapp.investments.client.IolApiClient;
+import com.financialapp.investments.model.dto.internal.PriceDetail;
 import com.financialapp.investments.model.entity.AssetPrice;
 import com.financialapp.investments.model.entity.Holding;
 import com.financialapp.investments.model.enums.AssetType;
@@ -11,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -23,6 +23,7 @@ public class PriceService {
     private final IolApiClient iolApiClient;
     private final AssetPriceRepository assetPriceRepository;
     private final HoldingRepository holdingRepository;
+    private final PriceHistoryService priceHistoryService;
 
     /**
      * Fetch and upsert price for a ticker. Resolves assetType and currency from the
@@ -59,9 +60,9 @@ public class PriceService {
      */
     @Transactional
     public void fetchAndUpsertPrice(String ticker, AssetType assetType, String currency) {
-        Optional<BigDecimal> price = iolApiClient.getPrice(ticker, assetType);
+        Optional<PriceDetail> priceDetail = iolApiClient.getPrice(ticker, assetType);
 
-        price.ifPresent(lastPrice -> {
+        priceDetail.ifPresent(detail -> {
             AssetPrice assetPrice = assetPriceRepository.findByTicker(ticker)
                     .orElse(AssetPrice.builder()
                             .ticker(ticker)
@@ -69,10 +70,17 @@ public class PriceService {
                             .currency(currency)
                             .build());
 
-            assetPrice.setLastPrice(lastPrice);
+            assetPrice.setLastPrice(detail.lastPrice());
+            assetPrice.setOpenPrice(detail.openPrice());
+            assetPrice.setHighPrice(detail.highPrice());
+            assetPrice.setLowPrice(detail.lowPrice());
+            assetPrice.setVolume(detail.volume());
+            assetPrice.setDailyVariation(detail.dailyVariation());
             assetPrice.setPricedAt(LocalDateTime.now());
             assetPriceRepository.save(assetPrice);
-            log.debug("Updated price for ticker={}: {}", ticker, lastPrice);
+
+            priceHistoryService.saveSnapshot(ticker, assetType, currency, detail);
+            log.debug("Updated price for ticker={}: {}", ticker, detail.lastPrice());
         });
     }
 }

@@ -23,6 +23,8 @@ public class HoldingWithPriceResponse {
     private String currency;
     private BigDecimal notifyGainThresholdPct;
     private BigDecimal notifyLossThresholdPct;
+    private LocalDateTime lastGainNotifiedAt;
+    private LocalDateTime lastLossNotifiedAt;
     private BigDecimal currentPrice;
     private BigDecimal currentValue;
     private BigDecimal plAmount;

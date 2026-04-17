@@ -2,6 +2,7 @@ package com.financialapp.investments.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.financialapp.investments.config.IolProperties;
+import com.financialapp.investments.model.dto.internal.PriceDetail;
 import com.financialapp.investments.model.enums.AssetType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -30,7 +31,7 @@ public class IolApiClient {
         this.restTemplate = new RestTemplate();
     }
 
-    public Optional<BigDecimal> getPrice(String ticker, AssetType assetType) {
+    public Optional<PriceDetail> getPrice(String ticker, AssetType assetType) {
         try {
             ensureAuthenticated();
             String market = resolveMarket(assetType);
@@ -46,7 +47,14 @@ public class IolApiClient {
                 JsonNode body = response.getBody();
                 JsonNode priceNode = body.get("ultimoPrecio");
                 if (priceNode != null && !priceNode.isNull()) {
-                    return Optional.of(new BigDecimal(priceNode.asText()));
+                    return Optional.of(new PriceDetail(
+                            new BigDecimal(priceNode.asText()),
+                            parseBigDecimal(body, "apertura"),
+                            parseBigDecimal(body, "maximo"),
+                            parseBigDecimal(body, "minimo"),
+                            parseBigDecimal(body, "volumen"),
+                            parseBigDecimal(body, "variacion")
+                    ));
                 }
             }
             log.warn("No price returned for ticker={} market={}", ticker, market);
@@ -55,6 +63,11 @@ public class IolApiClient {
             log.error("Failed to fetch price for ticker={}: {}", ticker, ex.getMessage());
             return Optional.empty();
         }
+    }
+
+    private BigDecimal parseBigDecimal(JsonNode node, String field) {
+        JsonNode n = node.get(field);
+        return (n != null && !n.isNull()) ? new BigDecimal(n.asText()) : null;
     }
 
     private synchronized void ensureAuthenticated() {

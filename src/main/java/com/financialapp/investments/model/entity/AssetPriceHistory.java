@@ -8,19 +8,20 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "asset_prices", schema = "investments")
+@Table(name = "asset_price_history", schema = "investments",
+        indexes = @Index(name = "idx_aph_ticker_priced_at", columnList = "ticker, priced_at"))
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class AssetPrice {
+public class AssetPriceHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, length = 20)
     private String ticker;
 
     @Enumerated(EnumType.STRING)
@@ -29,9 +30,6 @@ public class AssetPrice {
 
     @Column(name = "last_price", nullable = false, precision = 18, scale = 6)
     private BigDecimal lastPrice;
-
-    @Column(nullable = false, length = 3)
-    private String currency;
 
     @Column(name = "open_price", precision = 18, scale = 6)
     private BigDecimal openPrice;
@@ -48,19 +46,9 @@ public class AssetPrice {
     @Column(name = "daily_variation", precision = 8, scale = 4)
     private BigDecimal dailyVariation;
 
+    @Column(nullable = false, length = 3)
+    private String currency;
+
     @Column(name = "priced_at", nullable = false)
     private LocalDateTime pricedAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
