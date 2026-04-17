@@ -14,4 +14,8 @@ public interface AssetPriceHistoryRepository extends JpaRepository<AssetPriceHis
             String ticker, LocalDateTime from, LocalDateTime to);
 
     List<AssetPriceHistory> findByTickerOrderByPricedAtAsc(String ticker);
+
+    long countByTickerAndPricedAtAfter(String ticker, LocalDateTime since);
+
+    long countByTickerAndPricedAtBetween(String ticker, LocalDateTime from, LocalDateTime to);
 }

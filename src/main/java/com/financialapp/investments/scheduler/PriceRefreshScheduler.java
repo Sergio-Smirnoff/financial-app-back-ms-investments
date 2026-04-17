@@ -9,6 +9,7 @@ import com.financialapp.investments.repository.HoldingRepository;
 import com.financialapp.investments.service.PriceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +34,7 @@ public class PriceRefreshScheduler {
     private final PriceService priceService;
     private final InvestmentEventProducer investmentEventProducer;
 
+    @CacheEvict(value = "portfolio", allEntries = true)
     @Scheduled(cron = "${iol.price-refresh-cron}")
     public void refreshPrices() {
         // Fix 1b: fetch only distinct tickers — no need to load all holding data for price refresh

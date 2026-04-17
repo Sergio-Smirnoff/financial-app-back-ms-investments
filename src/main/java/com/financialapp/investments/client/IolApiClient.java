@@ -2,6 +2,7 @@ package com.financialapp.investments.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.financialapp.investments.config.IolProperties;
+import com.financialapp.investments.model.dto.internal.HistoricalPricePoint;
 import com.financialapp.investments.model.dto.internal.PriceDetail;
 import com.financialapp.investments.model.enums.AssetType;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -62,6 +68,60 @@ public class IolApiClient {
         } catch (RestClientException ex) {
             log.error("Failed to fetch price for ticker={}: {}", ticker, ex.getMessage());
             return Optional.empty();
+        }
+    }
+
+    public List<HistoricalPricePoint> getHistoricalSeries(String ticker, AssetType assetType, LocalDate from, LocalDate to) {
+        try {
+            ensureAuthenticated();
+            String market = resolveMarket(assetType);
+            // Canonical IOL historical endpoint: path params, not query string
+            String url = properties.getBaseUrl() + "/api/v2/" + market + "/Titulos/" + ticker
+                    + "/Cotizacion/seriehistorica/" + from + "/" + to + "/sinAjustar";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.warn("No series data for ticker={}", ticker);
+                return List.of();
+            }
+
+            JsonNode body = response.getBody();
+            log.info("IOL seriehistorica response for ticker={}: {} items", ticker,
+                    body.isArray() ? body.size() : "non-array");
+            List<HistoricalPricePoint> points = new ArrayList<>();
+
+            for (JsonNode item : body) {
+                // seriehistorica uses same structure as CotizacionDetalle: ultimoPrecio + fechaHora
+                JsonNode fechaNode = item.get("fechaHora");
+                JsonNode priceNode = item.get("ultimoPrecio");
+                if (fechaNode == null || fechaNode.isNull() || priceNode == null || priceNode.isNull()) {
+                    log.debug("Skipping item missing fechaHora/ultimoPrecio: {}", item);
+                    continue;
+                }
+
+                // Trim to 19 chars to strip timezone offset (e.g. "2026-04-14T17:00:00-03:00")
+                LocalDateTime pricedAt = LocalDateTime.parse(fechaNode.asText().substring(0, 19),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+
+                PriceDetail detail = new PriceDetail(
+                        new BigDecimal(priceNode.asText()),
+                        parseBigDecimal(item, "apertura"),
+                        parseBigDecimal(item, "maximo"),
+                        parseBigDecimal(item, "minimo"),
+                        parseBigDecimal(item, "volumenNominal"),
+                        parseBigDecimal(item, "variacion")
+                );
+                points.add(new HistoricalPricePoint(pricedAt, detail));
+            }
+            return points;
+        } catch (RestClientException ex) {
+            log.error("Failed to fetch series for ticker={}: {}", ticker, ex.getMessage());
+            return List.of();
         }
     }
 
