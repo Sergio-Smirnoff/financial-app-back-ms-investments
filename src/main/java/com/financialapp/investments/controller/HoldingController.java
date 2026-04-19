@@ -1,6 +1,7 @@
 package com.financialapp.investments.controller;
 
 import com.financialapp.investments.model.dto.request.HoldingRequest;
+import com.financialapp.investments.model.dto.response.AccountValuationResponse;
 import com.financialapp.investments.model.dto.response.ApiResponse;
 import com.financialapp.investments.model.dto.response.HoldingResponse;
 import com.financialapp.investments.service.HoldingService;
@@ -29,6 +30,13 @@ public class HoldingController {
             @RequestHeader("X-User-Id") Long userId,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(holdingService.list(userId, pageable)));
+    }
+
+    @GetMapping("/valuation")
+    @Operation(summary = "Get total valuation for holdings linked to a bank account")
+    public ResponseEntity<ApiResponse<AccountValuationResponse>> getAccountValuation(
+            @RequestParam Long accountId) {
+        return ResponseEntity.ok(ApiResponse.ok(holdingService.getAccountValuation(accountId)));
     }
 
     @PostMapping

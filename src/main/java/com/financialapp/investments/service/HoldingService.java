@@ -3,9 +3,12 @@ package com.financialapp.investments.service;
 import com.financialapp.investments.exception.ResourceNotFoundException;
 import com.financialapp.investments.mapper.HoldingMapper;
 import com.financialapp.investments.model.dto.request.HoldingRequest;
+import com.financialapp.investments.model.dto.response.AccountValuationResponse;
 import com.financialapp.investments.model.dto.response.HoldingResponse;
+import com.financialapp.investments.model.entity.AssetPrice;
 import com.financialapp.investments.model.entity.Holding;
 import com.financialapp.investments.model.enums.AssetType;
+import com.financialapp.investments.repository.AssetPriceRepository;
 import com.financialapp.investments.repository.HoldingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -23,6 +27,7 @@ import java.util.List;
 public class HoldingService {
 
     private final HoldingRepository holdingRepository;
+    private final AssetPriceRepository assetPriceRepository;
     private final HoldingMapper holdingMapper;
 
     @Transactional(readOnly = true)
@@ -44,6 +49,7 @@ public class HoldingService {
     public HoldingResponse create(Long userId, HoldingRequest request) {
         Holding holding = Holding.builder()
                 .userId(userId)
+                .bankAccountId(request.getBankAccountId())
                 .ticker(request.getTicker().toUpperCase())
                 .name(request.getName())
                 .assetType(AssetType.valueOf(request.getAssetType()))
@@ -62,6 +68,7 @@ public class HoldingService {
     @Transactional
     public HoldingResponse update(Long id, Long userId, HoldingRequest request) {
         Holding holding = findOwnedHolding(id, userId);
+        holding.setBankAccountId(request.getBankAccountId());
         holding.setTicker(request.getTicker().toUpperCase());
         holding.setName(request.getName());
         holding.setAssetType(AssetType.valueOf(request.getAssetType()));
@@ -71,6 +78,26 @@ public class HoldingService {
         holding.setNotifyGainThresholdPct(request.getNotifyGainThresholdPct());
         holding.setNotifyLossThresholdPct(request.getNotifyLossThresholdPct());
         return holdingMapper.toResponse(holdingRepository.save(holding));
+    }
+
+    @Transactional(readOnly = true)
+    public AccountValuationResponse getAccountValuation(Long accountId) {
+        List<Holding> holdings = holdingRepository.findByBankAccountId(accountId);
+        if (holdings.isEmpty()) {
+            return new AccountValuationResponse(accountId, BigDecimal.ZERO, null);
+        }
+
+        String currency = holdings.get(0).getCurrency();
+        BigDecimal total = holdings.stream()
+                .map(h -> {
+                    BigDecimal price = assetPriceRepository.findByTicker(h.getTicker())
+                            .map(AssetPrice::getLastPrice)
+                            .orElse(h.getAvgPurchasePrice());
+                    return h.getQuantity().multiply(price);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new AccountValuationResponse(accountId, total, currency);
     }
 
     @CacheEvict(value = "portfolio", key = "#userId")
