@@ -23,6 +23,9 @@ public class Holding {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "bank_account_id")
+    private Long bankAccountId;
+
     @Column(nullable = false, length = 20)
     private String ticker;
 

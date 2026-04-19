@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class HoldingRequest {
 
+    private Long bankAccountId;
+
     @NotBlank(message = "Ticker is required")
     @Size(max = 20, message = "Ticker must not exceed 20 characters")
     private String ticker;
