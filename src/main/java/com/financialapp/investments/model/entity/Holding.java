@@ -70,10 +70,17 @@ public class Holding {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        normalizeStrings();
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        normalizeStrings();
+    }
+
+    private void normalizeStrings() {
+        if (ticker != null) ticker = ticker.toUpperCase();
+        if (currency != null) currency = currency.toUpperCase();
     }
 }

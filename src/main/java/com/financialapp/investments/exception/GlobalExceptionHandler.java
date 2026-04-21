@@ -25,20 +25,31 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ApiResponse<Void>> handleFeignException(FeignException ex) {
-        log.warn("Feign call failed: status={}, message={}", ex.status(), ex.getMessage());
-        String message = ex.contentUTF8();
-        // Try to extract "message" from JSON if possible, otherwise use generic or raw
-        if (message != null && message.contains("\"message\":\"")) {
-            int start = message.indexOf("\"message\":\"") + 11;
-            int end = message.indexOf("\"", start);
-            if (end > start) {
-                message = message.substring(start, end);
+        String body = ex.contentUTF8();
+        log.warn("Feign call failed: status={}, body={}", ex.status(), body);
+        
+        String message = "Communication error between services";
+        // Try to extract "message" from JSON if possible
+        if (body != null && body.contains("\"message\":\"")) {
+            try {
+                int start = body.indexOf("\"message\":\"") + 11;
+                int end = body.indexOf("\"", start);
+                if (end > start) {
+                    message = body.substring(start, end);
+                }
+            } catch (Exception e) {
+                log.error("Failed to parse Feign error body", e);
             }
-        } else {
-            message = "Communication error between services";
+        } else if (body != null && !body.isBlank() && !body.startsWith("{")) {
+            // If it's just a plain text error message
+            message = body;
         }
         
-        HttpStatus status = ex.status() > 0 ? HttpStatus.valueOf(ex.status()) : HttpStatus.INTERNAL_SERVER_ERROR;
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        if (ex.status() >= 100 && ex.status() < 600) {
+            status = HttpStatus.valueOf(ex.status());
+        }
+        
         return ResponseEntity.status(status).body(ApiResponse.error(message));
     }
 

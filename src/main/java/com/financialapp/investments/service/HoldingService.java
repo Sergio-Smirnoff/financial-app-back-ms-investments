@@ -59,11 +59,21 @@ public class HoldingService {
         if (request.getFundingAccountId() != null) {
             banksClient.adjustBalance(request.getFundingAccountId(), totalCost.negate(), request.getCurrency());
             
-            // Record transaction in finances
+            // Record transaction in funding account (Debit/Expense)
             eventProducer.publishPayment(PaymentEvent.builder()
                     .userId(userId)
                     .accountId(request.getFundingAccountId())
                     .amount(totalCost)
+                    .currency(request.getCurrency())
+                    .description("Investment Buy: " + request.getTicker())
+                    .date(LocalDate.now())
+                    .build());
+
+            // Record transaction in investment account (Credit/Income)
+            eventProducer.publishPayment(PaymentEvent.builder()
+                    .userId(userId)
+                    .accountId(request.getBankAccountId())
+                    .amount(totalCost.negate())
                     .currency(request.getCurrency())
                     .description("Investment Buy: " + request.getTicker())
                     .date(LocalDate.now())
@@ -101,10 +111,21 @@ public class HoldingService {
             // If qty increased (costDiff > 0), deduct from account. If decreased, credit.
             banksClient.adjustBalance(request.getFundingAccountId(), costDiff.negate(), request.getCurrency());
 
+            // Record transaction in funding account
             eventProducer.publishPayment(PaymentEvent.builder()
                     .userId(userId)
                     .accountId(request.getFundingAccountId())
-                    .amount(costDiff.abs())
+                    .amount(costDiff)
+                    .currency(request.getCurrency())
+                    .description("Investment Update (" + (costDiff.signum() > 0 ? "Buy" : "Sell") + "): " + holding.getTicker())
+                    .date(LocalDate.now())
+                    .build());
+
+            // Record transaction in investment account (inverse of funding)
+            eventProducer.publishPayment(PaymentEvent.builder()
+                    .userId(userId)
+                    .accountId(request.getBankAccountId())
+                    .amount(costDiff.negate())
                     .currency(request.getCurrency())
                     .description("Investment Update (" + (costDiff.signum() > 0 ? "Buy" : "Sell") + "): " + holding.getTicker())
                     .date(LocalDate.now())
@@ -164,10 +185,20 @@ public class HoldingService {
             // Credit destination account
             banksClient.adjustBalance(destinationAccountId, liquidationValue, holding.getCurrency());
 
-            // Record transaction in finances
+            // Record transaction in destination account (Credit/Income)
             eventProducer.publishPayment(PaymentEvent.builder()
                     .userId(userId)
                     .accountId(destinationAccountId)
+                    .amount(liquidationValue.negate())
+                    .currency(holding.getCurrency())
+                    .description("Investment Sell: " + holding.getTicker())
+                    .date(LocalDate.now())
+                    .build());
+
+            // Record transaction in investment account (Debit/Expense)
+            eventProducer.publishPayment(PaymentEvent.builder()
+                    .userId(userId)
+                    .accountId(holding.getBankAccountId())
                     .amount(liquidationValue)
                     .currency(holding.getCurrency())
                     .description("Investment Sell: " + holding.getTicker())
