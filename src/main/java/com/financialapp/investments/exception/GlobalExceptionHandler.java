@@ -1,6 +1,7 @@
 package com.financialapp.investments.exception;
 
 import com.financialapp.investments.model.dto.response.ApiResponse;
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,21 +23,32 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
-        log.warn("Business rule violation: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+    @ExceptionHandler(FeignException.class)
+    public ResponseEntity<ApiResponse<Void>> handleFeignException(FeignException ex) {
+        log.warn("Feign call failed: status={}, message={}", ex.status(), ex.getMessage());
+        String message = ex.contentUTF8();
+        // Try to extract "message" from JSON if possible, otherwise use generic or raw
+        if (message != null && message.contains("\"message\":\"")) {
+            int start = message.indexOf("\"message\":\"") + 11;
+            int end = message.indexOf("\"", start);
+            if (end > start) {
+                message = message.substring(start, end);
+            }
+        } else {
+            message = "Communication error between services";
+        }
+        
+        HttpStatus status = ex.status() > 0 ? HttpStatus.valueOf(ex.status()) : HttpStatus.INTERNAL_SERVER_ERROR;
+        return ResponseEntity.status(status).body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<List<String>>> handleValidationException(MethodArgumentNotValidException ex) {
         List<String> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(FieldError::getDefaultMessage)
                 .toList();
-        log.warn("Validation failed: {}", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Validation failed", errors));
     }
