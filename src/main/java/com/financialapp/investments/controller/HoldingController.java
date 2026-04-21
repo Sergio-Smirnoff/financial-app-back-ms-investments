@@ -39,6 +39,12 @@ public class HoldingController {
         return ResponseEntity.ok(ApiResponse.ok(holdingService.getAccountValuation(accountId)));
     }
 
+    @GetMapping("/count")
+    @Operation(summary = "Count holdings linked to a bank account")
+    public ResponseEntity<ApiResponse<Long>> countHoldings(@RequestParam Long accountId) {
+        return ResponseEntity.ok(ApiResponse.ok(holdingService.countByAccountId(accountId)));
+    }
+
     @PostMapping
     @Operation(summary = "Create a new holding")
     public ResponseEntity<ApiResponse<HoldingResponse>> create(
@@ -58,11 +64,12 @@ public class HoldingController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a holding")
+    @Operation(summary = "Delete (Sell) a holding")
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestHeader("X-User-Id") Long userId,
-            @PathVariable Long id) {
-        holdingService.delete(id, userId);
+            @PathVariable Long id,
+            @RequestParam(required = false) Long destinationAccountId) {
+        holdingService.delete(id, userId, destinationAccountId);
         return ResponseEntity.ok(ApiResponse.ok("Holding deleted", null));
     }
 }

@@ -12,7 +12,13 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class HoldingRequest {
 
+    @NotNull(message = "Bank account ID is required")
     private Long bankAccountId;
+
+    @NotNull(message = "Bank ID is required")
+    private Long bankId;
+
+    private Long fundingAccountId;
 
     @NotBlank(message = "Ticker is required")
     @Size(max = 20, message = "Ticker must not exceed 20 characters")
