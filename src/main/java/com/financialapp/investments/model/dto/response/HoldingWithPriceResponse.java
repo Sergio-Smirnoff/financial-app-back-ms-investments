@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 public class HoldingWithPriceResponse {
     private Long id;
     private Long userId;
+    private Long bankId;
+    private Long bankAccountId;
     private String ticker;
     private String name;
     private String assetType;

@@ -54,6 +54,8 @@ public class PortfolioService {
             return HoldingWithPriceResponse.builder()
                     .id(h.getId())
                     .userId(h.getUserId())
+                    .bankId(h.getBankId())
+                    .bankAccountId(h.getBankAccountId())
                     .ticker(h.getTicker())
                     .name(h.getName())
                     .assetType(h.getAssetType().name())
