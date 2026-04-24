@@ -130,6 +130,7 @@ public class IolApiClient {
         try {
             ensureAuthenticated();
             String url = properties.getBaseUrl() + "/api/v2/Cotizaciones/Acciones/" + market + "/Argentina";
+            log.info("Fetching panel quotes from: {}", url);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
@@ -138,6 +139,7 @@ public class IolApiClient {
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.warn("IOL returned non-success status: {}", response.getStatusCode());
                 return List.of();
             }
 
@@ -145,6 +147,7 @@ public class IolApiClient {
             List<MarketQuote> quotes = new ArrayList<>();
 
             if (titulos != null && titulos.isArray()) {
+                log.info("Found {} titles in panel {}", titulos.size(), market);
                 for (JsonNode node : titulos) {
                     quotes.add(new MarketQuote(
                             node.get("simbolo").asText(),
@@ -152,10 +155,12 @@ public class IolApiClient {
                             parseBigDecimal(node, "variacion")
                     ));
                 }
+            } else {
+                log.warn("IOL response body missing 'titulos' array: {}", response.getBody());
             }
             return quotes;
-        } catch (RestClientException ex) {
-            log.error("Failed to fetch panel quotes for {}: {}", market, ex.getMessage());
+        } catch (Exception ex) {
+            log.error("Critical error fetching panel quotes for {}: {}", market, ex.getMessage(), ex);
             return List.of();
         }
     }
