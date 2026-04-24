@@ -35,11 +35,10 @@ public class MarketDiscoveryScheduler {
         }
 
         List<MarketPanelQuote> entities = quotes.stream()
-                .filter(q -> q.variation() != null)
                 .map(q -> MarketPanelQuote.builder()
                         .ticker(q.ticker().toUpperCase().trim())
                         .lastPrice(q.price())
-                        .variation(q.variation())
+                        .variation(q.variation() != null ? q.variation() : java.math.BigDecimal.ZERO)
                         .build())
                 .toList();
 
