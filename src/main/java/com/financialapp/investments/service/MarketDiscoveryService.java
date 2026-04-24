@@ -1,8 +1,9 @@
 package com.financialapp.investments.service;
 
-import com.financialapp.investments.client.IolApiClient;
 import com.financialapp.investments.model.dto.internal.MarketQuote;
+import com.financialapp.investments.model.entity.MarketPanelQuote;
 import com.financialapp.investments.repository.HoldingRepository;
+import com.financialapp.investments.repository.MarketPanelQuoteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,39 +18,33 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MarketDiscoveryService {
 
-    private final IolApiClient iolApiClient;
+    private final MarketPanelQuoteRepository quoteRepository;
     private final HoldingRepository holdingRepository;
 
     @Cacheable(value = "marketDiscovery", key = "#userId")
     public List<MarketQuote> getTrendingOpportunities(Long userId, int limit) {
-        log.info("Generating trending opportunities for userId={} (limit={})", userId, limit);
-        
-        // 1. Fetch from Lideres panel (most active stocks in Argentina)
-        List<MarketQuote> allQuotes = iolApiClient.getPanelQuotes("Lideres");
-        
-        if (allQuotes.isEmpty()) {
-            log.warn("No quotes found in Lideres panel, trying Cedears as fallback...");
-            allQuotes = iolApiClient.getPanelQuotes("Cedears");
+        log.info("Generating trending opportunities for userId={} from DB cache", userId);
+
+        List<MarketPanelQuote> dbQuotes = quoteRepository.findAll();
+
+        if (dbQuotes.isEmpty()) {
+            log.warn("No cached market quotes found in database.");
+            return List.of();
         }
 
-        log.info("Total quotes fetched from IOL: {}", allQuotes.size());
-
-        // 2. Get tickers user already owns
         Set<String> ownedTickers = holdingRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(h -> h.getTicker().toUpperCase().trim())
                 .collect(Collectors.toSet());
-        
-        log.info("User {} already owns {} tickers", userId, ownedTickers.size());
 
-        // 3. Filter out owned and sort by absolute variation (trending)
-        List<MarketQuote> opportunities = allQuotes.stream()
-                .filter(q -> !ownedTickers.contains(q.ticker().toUpperCase().trim()))
-                .filter(q -> q.variation() != null)
-                .sorted((a, b) -> b.variation().abs().compareTo(a.variation().abs()))
+        List<MarketQuote> opportunities = dbQuotes.stream()
+                .filter(q -> !ownedTickers.contains(q.getTicker().toUpperCase().trim()))
+                .sorted((a, b) -> b.getVariation().abs().compareTo(a.getVariation().abs()))
                 .limit(limit)
+                .map(q -> new MarketQuote(q.getTicker(), q.getLastPrice(), q.getVariation()))
                 .toList();
 
-        log.info("Returning {} trending opportunities", opportunities.size());
+        log.info("Returning {} trending opportunities (out of {} cached quotes)", 
+                opportunities.size(), dbQuotes.size());
         return opportunities;
     }
 }
