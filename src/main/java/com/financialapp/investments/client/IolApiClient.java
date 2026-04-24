@@ -3,6 +3,7 @@ package com.financialapp.investments.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.financialapp.investments.config.IolProperties;
 import com.financialapp.investments.model.dto.internal.HistoricalPricePoint;
+import com.financialapp.investments.model.dto.internal.MarketQuote;
 import com.financialapp.investments.model.dto.internal.PriceDetail;
 import com.financialapp.investments.model.enums.AssetType;
 import lombok.extern.slf4j.Slf4j;
@@ -121,6 +122,40 @@ public class IolApiClient {
             return points;
         } catch (RestClientException ex) {
             log.error("Failed to fetch series for ticker={}: {}", ticker, ex.getMessage());
+            return List.of();
+        }
+    }
+
+    public List<MarketQuote> getPanelQuotes(String market) {
+        try {
+            ensureAuthenticated();
+            String url = properties.getBaseUrl() + "/api/v2/Cotizaciones/Acciones/" + market + "/Argentina";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return List.of();
+            }
+
+            JsonNode titulos = response.getBody().get("titulos");
+            List<MarketQuote> quotes = new ArrayList<>();
+
+            if (titulos != null && titulos.isArray()) {
+                for (JsonNode node : titulos) {
+                    quotes.add(new MarketQuote(
+                            node.get("simbolo").asText(),
+                            parseBigDecimal(node, "ultimoPrecio"),
+                            parseBigDecimal(node, "variacion")
+                    ));
+                }
+            }
+            return quotes;
+        } catch (RestClientException ex) {
+            log.error("Failed to fetch panel quotes for {}: {}", market, ex.getMessage());
             return List.of();
         }
     }
