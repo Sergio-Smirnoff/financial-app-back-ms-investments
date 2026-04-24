@@ -2,11 +2,13 @@ package com.financialapp.investments.service;
 
 import com.financialapp.investments.model.dto.response.AllocationBreakdown;
 import com.financialapp.investments.model.dto.response.HoldingWithPriceResponse;
+import com.financialapp.investments.model.dto.response.PortfolioEvolutionResponse;
 import com.financialapp.investments.model.dto.response.PortfolioSummaryResponse;
 import com.financialapp.investments.model.entity.AssetPrice;
 import com.financialapp.investments.model.entity.Holding;
 import com.financialapp.investments.repository.AssetPriceRepository;
 import com.financialapp.investments.repository.HoldingRepository;
+import com.financialapp.investments.repository.PortfolioSnapshotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,7 @@ public class PortfolioService {
 
     private final HoldingRepository holdingRepository;
     private final AssetPriceRepository assetPriceRepository;
+    private final PortfolioSnapshotRepository snapshotRepository;
 
     @Transactional(readOnly = true)
     public List<HoldingWithPriceResponse> getHoldingsWithPrices(Long userId) {
@@ -124,6 +128,19 @@ public class PortfolioService {
                 .breakdownArs(breakdownArs)
                 .breakdownUsd(breakdownUsd)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PortfolioEvolutionResponse> getPortfolioEvolution(Long userId, int days) {
+        LocalDate startDate = LocalDate.now().minusDays(days);
+        return snapshotRepository.findByUserIdAndSnapshotDateGreaterThanEqualOrderBySnapshotDateAsc(userId, startDate)
+                .stream()
+                .map(s -> PortfolioEvolutionResponse.builder()
+                        .date(s.getSnapshotDate())
+                        .totalValueArs(s.getTotalValueArs())
+                        .totalValueUsd(s.getTotalValueUsd())
+                        .build())
+                .toList();
     }
 
     private List<AllocationBreakdown> buildBreakdown(List<HoldingWithPriceResponse> holdings,

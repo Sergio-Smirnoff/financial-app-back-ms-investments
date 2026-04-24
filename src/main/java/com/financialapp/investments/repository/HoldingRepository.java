@@ -22,6 +22,9 @@ public interface HoldingRepository extends JpaRepository<Holding, Long> {
     List<Holding> findByBankAccountId(Long bankAccountId);
     long countByBankAccountId(Long bankAccountId);
 
+    @Query("SELECT DISTINCT h.userId FROM Holding h")
+    List<Long> findDistinctUserIds();
+
     @Query("SELECT DISTINCT h.ticker FROM Holding h")
     List<String> findDistinctTickers();
 

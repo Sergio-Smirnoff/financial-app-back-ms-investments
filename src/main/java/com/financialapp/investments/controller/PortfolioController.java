@@ -2,6 +2,7 @@ package com.financialapp.investments.controller;
 
 import com.financialapp.investments.model.dto.response.ApiResponse;
 import com.financialapp.investments.model.dto.response.HoldingWithPriceResponse;
+import com.financialapp.investments.model.dto.response.PortfolioEvolutionResponse;
 import com.financialapp.investments.model.dto.response.PortfolioSummaryResponse;
 import com.financialapp.investments.service.PortfolioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,5 +33,13 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<List<HoldingWithPriceResponse>>> getHoldingsWithPrices(
             @RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(ApiResponse.ok(portfolioService.getHoldingsWithPrices(userId)));
+    }
+
+    @GetMapping("/evolution")
+    @Operation(summary = "Get historical portfolio evolution (ARS and USD)")
+    public ResponseEntity<ApiResponse<List<PortfolioEvolutionResponse>>> getPortfolioEvolution(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(ApiResponse.ok(portfolioService.getPortfolioEvolution(userId, days)));
     }
 }
