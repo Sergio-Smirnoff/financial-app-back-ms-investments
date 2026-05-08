@@ -43,6 +43,26 @@ iol:
   password: ${IOL_PASSWORD:}
   price-refresh-cron: ${IOL_PRICE_REFRESH_CRON:0 */15 10-17 * * MON-FRI}
 
+resilience4j:
+  retry:
+    instances:
+      iolApi:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+  circuitbreaker:
+    instances:
+      iolApi:
+        register-health-indicator: true
+        sliding-window-size: 10
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+
 springdoc:
   api-docs:
     path: /v3/api-docs

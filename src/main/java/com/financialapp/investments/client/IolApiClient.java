@@ -6,11 +6,14 @@ import com.financialapp.investments.model.dto.internal.HistoricalPricePoint;
 import com.financialapp.investments.model.dto.internal.MarketQuote;
 import com.financialapp.investments.model.dto.internal.PriceDetail;
 import com.financialapp.investments.model.enums.AssetType;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -38,131 +41,161 @@ public class IolApiClient {
         this.restTemplate = new RestTemplate();
     }
 
+    @Retry(name = "iolApi")
+    @CircuitBreaker(name = "iolApi")
     public Optional<PriceDetail> getPrice(String ticker, AssetType assetType) {
         try {
-            ensureAuthenticated();
-            String market = resolveMarket(assetType);
-            String url = properties.getBaseUrl() + "/api/v2/" + market + "/Titulos/" + ticker + "/CotizacionDetalle";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                JsonNode body = response.getBody();
-                JsonNode priceNode = body.get("ultimoPrecio");
-                if (priceNode != null && !priceNode.isNull()) {
-                    return Optional.of(new PriceDetail(
-                            new BigDecimal(priceNode.asText()),
-                            parseBigDecimal(body, "apertura"),
-                            parseBigDecimal(body, "maximo"),
-                            parseBigDecimal(body, "minimo"),
-                            parseBigDecimal(body, "volumen"),
-                            parseBigDecimal(body, "variacion")
-                    ));
-                }
-            }
-            log.warn("No price returned for ticker={} market={}", ticker, market);
-            return Optional.empty();
+            return getPriceInternal(ticker, assetType);
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            log.info("IOL token expired or invalid (401), refreshing...");
+            authenticate();
+            return getPriceInternal(ticker, assetType);
         } catch (RestClientException ex) {
             log.error("Failed to fetch price for ticker={}: {}", ticker, ex.getMessage());
             return Optional.empty();
         }
     }
 
+    private Optional<PriceDetail> getPriceInternal(String ticker, AssetType assetType) {
+        ensureAuthenticated();
+        String market = resolveMarket(assetType);
+        String url = properties.getBaseUrl() + "/api/v2/" + market + "/Titulos/" + ticker + "/CotizacionDetalle";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            JsonNode body = response.getBody();
+            JsonNode priceNode = body.get("ultimoPrecio");
+            if (priceNode != null && !priceNode.isNull()) {
+                return Optional.of(new PriceDetail(
+                        new BigDecimal(priceNode.asText()),
+                        parseBigDecimal(body, "apertura"),
+                        parseBigDecimal(body, "maximo"),
+                        parseBigDecimal(body, "minimo"),
+                        parseBigDecimal(body, "volumen"),
+                        parseBigDecimal(body, "variacion")
+                ));
+            }
+        }
+        log.warn("No price returned for ticker={} market={}", ticker, market);
+        return Optional.empty();
+    }
+
+    @Retry(name = "iolApi")
+    @CircuitBreaker(name = "iolApi")
     public List<HistoricalPricePoint> getHistoricalSeries(String ticker, AssetType assetType, LocalDate from, LocalDate to) {
         try {
-            ensureAuthenticated();
-            String market = resolveMarket(assetType);
-            // Canonical IOL historical endpoint: path params, not query string
-            String url = properties.getBaseUrl() + "/api/v2/" + market + "/Titulos/" + ticker
-                    + "/Cotizacion/seriehistorica/" + from + "/" + to + "/sinAjustar";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
-
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                log.warn("No series data for ticker={}", ticker);
-                return List.of();
-            }
-
-            JsonNode body = response.getBody();
-            log.info("IOL seriehistorica response for ticker={}: {} items", ticker,
-                    body.isArray() ? body.size() : "non-array");
-            List<HistoricalPricePoint> points = new ArrayList<>();
-
-            for (JsonNode item : body) {
-                // seriehistorica uses same structure as CotizacionDetalle: ultimoPrecio + fechaHora
-                JsonNode fechaNode = item.get("fechaHora");
-                JsonNode priceNode = item.get("ultimoPrecio");
-                if (fechaNode == null || fechaNode.isNull() || priceNode == null || priceNode.isNull()) {
-                    log.debug("Skipping item missing fechaHora/ultimoPrecio: {}", item);
-                    continue;
-                }
-
-                // Trim to 19 chars to strip timezone offset (e.g. "2026-04-14T17:00:00-03:00")
-                LocalDateTime pricedAt = LocalDateTime.parse(fechaNode.asText().substring(0, 19),
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-
-                PriceDetail detail = new PriceDetail(
-                        new BigDecimal(priceNode.asText()),
-                        parseBigDecimal(item, "apertura"),
-                        parseBigDecimal(item, "maximo"),
-                        parseBigDecimal(item, "minimo"),
-                        parseBigDecimal(item, "volumenNominal"),
-                        parseBigDecimal(item, "variacion")
-                );
-                points.add(new HistoricalPricePoint(pricedAt, detail));
-            }
-            return points;
+            return getHistoricalSeriesInternal(ticker, assetType, from, to);
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            log.info("IOL token expired or invalid (401), refreshing...");
+            authenticate();
+            return getHistoricalSeriesInternal(ticker, assetType, from, to);
         } catch (RestClientException ex) {
             log.error("Failed to fetch series for ticker={}: {}", ticker, ex.getMessage());
             return List.of();
         }
     }
 
-    public List<MarketQuote> getPanelQuotes(String market) {
-        try {
-            ensureAuthenticated();
-            String url = properties.getBaseUrl() + "/api/v2/Cotizaciones/Acciones/" + market + "/Argentina";
-            log.info("Fetching panel quotes from: {}", url);
+    private List<HistoricalPricePoint> getHistoricalSeriesInternal(String ticker, AssetType assetType, LocalDate from, LocalDate to) {
+        ensureAuthenticated();
+        String market = resolveMarket(assetType);
+        // Canonical IOL historical endpoint: path params, not query string
+        String url = properties.getBaseUrl() + "/api/v2/" + market + "/Titulos/" + ticker
+                + "/Cotizacion/seriehistorica/" + from + "/" + to + "/sinAjustar";
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                log.warn("IOL returned non-success status: {}", response.getStatusCode());
-                return List.of();
-            }
-
-            JsonNode titulos = response.getBody().get("titulos");
-            List<MarketQuote> quotes = new ArrayList<>();
-
-            if (titulos != null && titulos.isArray()) {
-                log.info("Found {} titles in panel {}", titulos.size(), market);
-                for (JsonNode node : titulos) {
-                    quotes.add(new MarketQuote(
-                            node.get("simbolo").asText(),
-                            parseBigDecimal(node, "ultimoPrecio"),
-                            parseBigDecimal(node, "variacion")
-                    ));
-                }
-            } else {
-                log.warn("IOL response body missing 'titulos' array: {}", response.getBody());
-            }
-            return quotes;
-        } catch (Exception ex) {
-            log.error("Critical error fetching panel quotes for {}: {}", market, ex.getMessage(), ex);
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            log.warn("No series data for ticker={}", ticker);
             return List.of();
         }
+
+        JsonNode body = response.getBody();
+        log.info("IOL seriehistorica response for ticker={}: {} items", ticker,
+                body.isArray() ? body.size() : "non-array");
+        List<HistoricalPricePoint> points = new ArrayList<>();
+
+        for (JsonNode item : body) {
+            // seriehistorica uses same structure as CotizacionDetalle: ultimoPrecio + fechaHora
+            JsonNode fechaNode = item.get("fechaHora");
+            JsonNode priceNode = item.get("ultimoPrecio");
+            if (fechaNode == null || fechaNode.isNull() || priceNode == null || priceNode.isNull()) {
+                log.debug("Skipping item missing fechaHora/ultimoPrecio: {}", item);
+                continue;
+            }
+
+            // Trim to 19 chars to strip timezone offset (e.g. "2026-04-14T17:00:00-03:00")
+            LocalDateTime pricedAt = LocalDateTime.parse(fechaNode.asText().substring(0, 19),
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+
+            PriceDetail detail = new PriceDetail(
+                    new BigDecimal(priceNode.asText()),
+                    parseBigDecimal(item, "apertura"),
+                    parseBigDecimal(item, "maximo"),
+                    parseBigDecimal(item, "minimo"),
+                    parseBigDecimal(item, "volumenNominal"),
+                    parseBigDecimal(item, "variacion")
+            );
+            points.add(new HistoricalPricePoint(pricedAt, detail));
+        }
+        return points;
+    }
+
+    @Retry(name = "iolApi")
+    @CircuitBreaker(name = "iolApi")
+    public List<MarketQuote> getPanelQuotes(String market) {
+        try {
+            return getPanelQuotesInternal(market);
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            log.info("IOL token expired or invalid (401), refreshing...");
+            authenticate();
+            return getPanelQuotesInternal(market);
+        } catch (Exception ex) {
+            log.error("Critical error fetching panel quotes for {}: {}", market, ex.getMessage());
+            return List.of();
+        }
+    }
+
+    private List<MarketQuote> getPanelQuotesInternal(String market) {
+        ensureAuthenticated();
+        String url = properties.getBaseUrl() + "/api/v2/Cotizaciones/Acciones/" + market + "/Argentina";
+        log.info("Fetching panel quotes from: {}", url);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            log.warn("IOL returned non-success status: {}", response.getStatusCode());
+            return List.of();
+        }
+
+        JsonNode titulos = response.getBody().get("titulos");
+        List<MarketQuote> quotes = new ArrayList<>();
+
+        if (titulos != null && titulos.isArray()) {
+            log.info("Found {} titles in panel {}", titulos.size(), market);
+            for (JsonNode node : titulos) {
+                quotes.add(new MarketQuote(
+                        node.get("simbolo").asText(),
+                        parseBigDecimal(node, "ultimoPrecio"),
+                        parseBigDecimal(node, "variacion")
+                ));
+            }
+        } else {
+            log.warn("IOL response body missing 'titulos' array: {}", response.getBody());
+        }
+        return quotes;
     }
 
     private BigDecimal parseBigDecimal(JsonNode node, String field) {
