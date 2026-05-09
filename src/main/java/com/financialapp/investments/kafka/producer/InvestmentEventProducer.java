@@ -4,7 +4,7 @@ import com.financialapp.investments.kafka.event.InvestmentThresholdEvent;
 import com.financialapp.investments.kafka.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,17 +15,17 @@ public class InvestmentEventProducer {
     private static final String TOPIC_THRESHOLD = "investment.threshold.reached";
     private static final String TOPIC_PAYMENT = "bank.payment.recorded";
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void publishThresholdReached(InvestmentThresholdEvent event) {
-        log.info("Publishing investment.threshold.reached event for userId={}, ticker={}, direction={}",
+        log.info("Queuing transactional investment.threshold.reached event for userId={}, ticker={}, direction={}",
                 event.getUserId(), event.getPayload().getTicker(), event.getPayload().getDirection());
-        kafkaTemplate.send(TOPIC_THRESHOLD, String.valueOf(event.getUserId()), event);
+        eventPublisher.publishEvent(new TransactionalKafkaEvent(TOPIC_THRESHOLD, String.valueOf(event.getUserId()), event));
     }
 
     public void publishPayment(PaymentEvent event) {
-        log.info("Publishing bank.payment.recorded for investment transaction, userId={}, amount={}",
+        log.info("Queuing transactional bank.payment.recorded for investment transaction, userId={}, amount={}",
                 event.getUserId(), event.getAmount());
-        kafkaTemplate.send(TOPIC_PAYMENT, String.valueOf(event.getUserId()), event);
+        eventPublisher.publishEvent(new TransactionalKafkaEvent(TOPIC_PAYMENT, String.valueOf(event.getUserId()), event));
     }
 }

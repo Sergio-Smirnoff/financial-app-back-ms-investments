@@ -11,7 +11,7 @@ spring:
     password: ${DB_PASSWORD:changeme}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 5
       minimum-idle: 5
       connection-timeout: 20000
       idle-timeout: 300000
@@ -43,6 +43,26 @@ iol:
   password: ${IOL_PASSWORD:}
   price-refresh-cron: ${IOL_PRICE_REFRESH_CRON:0 */15 10-17 * * MON-FRI}
 
+resilience4j:
+  retry:
+    instances:
+      iolApi:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - org.springframework.web.client.RestClientException
+  circuitbreaker:
+    instances:
+      iolApi:
+        register-health-indicator: true
+        sliding-window-size: 10
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: COUNT_BASED
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -54,7 +74,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
