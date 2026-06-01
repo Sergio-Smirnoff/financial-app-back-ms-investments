@@ -1,0 +1,38 @@
+# Test profile fixtures. Activated by @ActiveProfiles("test") on integration tests.
+# In-memory H2 in Postgres-compat mode. Flyway disabled — Hibernate creates schema.
+# Kafka auto-config excluded — no broker available in tests.
+spring:
+  datasource:
+    url: jdbc:h2:mem:investments-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS investments
+    username: sa
+    password: test-password
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema:
+  flyway:
+    enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+investments:
+  currencies:
+    supported: [ARS, USD]
+
+iol:
+  base-url: http://localhost:0/iol-stub
+  username: test-user
+  password: test-password
+  price-refresh-cron: "0 */15 10-17 * * MON-FRI"
+
+banks:
+  service:
+    url: http://localhost:0/banks-stub
+
+internal:
+  auth:
+    token: test-token

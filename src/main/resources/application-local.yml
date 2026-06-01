@@ -1,0 +1,14 @@
+# Local-dev profile only. Activated by SPRING_PROFILES_ACTIVE=local.
+# NEVER use these values in higher environments. Provides defaults so that
+# `mvn spring-boot:run` works without exporting every env var first.
+spring:
+  datasource:
+    password: local-dev-password
+
+iol:
+  username: local-dev-user
+  password: local-dev-password
+
+internal:
+  auth:
+    token: local-dev-token
