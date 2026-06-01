@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/financialapp?currentSchema=investments}
     username: ${DB_USERNAME:financialapp}
-    password: ${DB_PASSWORD:changeme}
+    password: ${DB_PASSWORD:?DB_PASSWORD must be set}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
@@ -37,11 +37,24 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+investments:
+  currencies:
+    # Whitelist of ISO 4217 codes accepted on inbound holdings.
+    supported: [ARS, USD, EUR]
+
 iol:
   base-url: ${IOL_BASE_URL:https://api.invertironline.com}
-  username: ${IOL_USERNAME:}
-  password: ${IOL_PASSWORD:}
+  username: ${IOL_USERNAME:?IOL_USERNAME must be set}
+  password: ${IOL_PASSWORD:?IOL_PASSWORD must be set}
   price-refresh-cron: ${IOL_PRICE_REFRESH_CRON:0 */15 10-17 * * MON-FRI}
+
+banks:
+  service:
+    url: ${BANKS_SERVICE_URL:http://localhost:8083}
+
+internal:
+  auth:
+    token: ${INTERNAL_AUTH_TOKEN:?INTERNAL_AUTH_TOKEN must be set}
 
 resilience4j:
   retry:
