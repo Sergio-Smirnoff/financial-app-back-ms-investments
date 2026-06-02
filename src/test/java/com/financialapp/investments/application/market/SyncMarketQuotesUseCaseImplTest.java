@@ -7,7 +7,7 @@ import com.financialapp.investments.domain.gateway.IolGateway;
 import com.financialapp.investments.domain.model.holding.Ticker;
 import com.financialapp.investments.domain.model.market.MarketQuote;
 import com.financialapp.investments.domain.repository.MarketQuoteRepository;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
+import com.financialapp.investments.domain.exception.IolServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,7 +44,7 @@ class SyncMarketQuotesUseCaseImplTest {
     @Test
     void execute_iolFailure_wrappedAsIolServiceException() {
         when(iolGateway.getPanelQuotes("merval"))
-                .thenThrow(new InfrastructureException("iol down"));
+                .thenThrow(new IolServiceException("iol down"));
 
         assertThatThrownBy(() -> useCase.execute())
                 .isInstanceOf(IolServiceException.class);

@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 public class HoldingDetailResponse {
     private Long id;
     private Long userId;
-    private Long bankId;
-    private Long bankAccountId;
+    private String accountCbu;
     private String ticker;
     private String name;
     private String assetType;

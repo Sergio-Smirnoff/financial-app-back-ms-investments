@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.price;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.price.impl.RefreshPricesUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -17,7 +19,7 @@ import com.financialapp.investments.domain.model.refresh.RefreshJobStatus;
 import com.financialapp.investments.domain.repository.AssetPriceHistoryRepository;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
 import com.financialapp.investments.domain.repository.RefreshJobRepository;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
+import com.financialapp.investments.domain.exception.IolServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -110,7 +112,7 @@ class RefreshPricesUseCaseImplTest {
         when(holdingQueryGateway.findDistinctTickers()).thenReturn(List.of(new Ticker("AAPL")));
         when(refreshJobRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(holdingQueryGateway.findFirstByTicker(any())).thenReturn(Optional.empty());
-        when(iolGateway.getPrice(any(), any())).thenThrow(new InfrastructureException("iol fail"));
+        when(iolGateway.getPrice(any(), any())).thenThrow(new IolServiceException("iol fail"));
 
         assertThatThrownBy(() -> useCase.execute()).isInstanceOf(IolServiceException.class);
 
@@ -122,7 +124,7 @@ class RefreshPricesUseCaseImplTest {
     }
 
     private static Holding holding(AssetType type) {
-        return new Holding(new HoldingId(1L), new UserId(1L), new BanksAccountId(1L), new BankId(1L),
+        return new Holding(new HoldingId(1L), new UserId(1L), new Cbu("0070009000000000000017"),
                 new Ticker("AAPL"), "n", type,
                 new HoldingQuantity(BigDecimal.ONE), Money.of(BigDecimal.ONE, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

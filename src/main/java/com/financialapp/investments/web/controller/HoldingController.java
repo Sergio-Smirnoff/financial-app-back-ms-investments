@@ -3,6 +3,7 @@ package com.financialapp.investments.web.controller;
 import com.financialapp.investments.domain.usecase.holding.command.*;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
 import com.financialapp.investments.domain.usecase.holding.*;
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.PageRequest;
 import com.financialapp.investments.domain.common.model.PageResult;
@@ -60,17 +61,17 @@ public class HoldingController {
     @GetMapping("/valuation")
     @Operation(summary = "Get total valuation for holdings linked to a bank account")
     public ResponseEntity<ApiResponse<AccountValuationResponse>> getAccountValuation(
-            @RequestParam Long accountId) {
+            @RequestParam String accountCbu) {
         AccountValuationResult result = getAccountValuationUseCase.execute(
-                new GetAccountValuationCommand(new BanksAccountId(accountId)));
+                new GetAccountValuationCommand(new Cbu(accountCbu)));
         return ResponseEntity.ok(ApiResponse.ok(holdingWebMapper.toValuationResponse(result)));
     }
 
     @GetMapping("/count")
     @Operation(summary = "Count holdings linked to a bank account")
-    public ResponseEntity<ApiResponse<Long>> countHoldings(@RequestParam Long accountId) {
+    public ResponseEntity<ApiResponse<Long>> countHoldings(@RequestParam String accountCbu) {
         AccountValuationResult result = getAccountValuationUseCase.execute(
-                new GetAccountValuationCommand(new BanksAccountId(accountId)));
+                new GetAccountValuationCommand(new Cbu(accountCbu)));
         return ResponseEntity.ok(ApiResponse.ok(result.holdingCount()));
     }
 
@@ -99,26 +100,25 @@ public class HoldingController {
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
-            @RequestParam(required = false) Long destinationAccountId) {
+            @RequestParam(required = false) String destinationCbu) {
         closeHoldingUseCase.execute(new CloseHoldingCommand(
                 new UserId(userId),
                 new HoldingId(id),
-                destinationAccountId != null ? new BanksAccountId(destinationAccountId) : null));
+                destinationCbu != null ? new Cbu(destinationCbu) : null));
         return ResponseEntity.ok(ApiResponse.ok("Holding deleted", null));
     }
 
     private CreateHoldingCommand toCreateCommand(Long userId, HoldingRequest req) {
         return new CreateHoldingCommand(
                 new UserId(userId),
-                new BanksAccountId(req.getBankAccountId()),
-                new BankId(req.getBankId()),
+                new Cbu(req.getAccountCbu()),
                 new Ticker(req.getTicker()),
                 req.getName(),
                 AssetType.valueOf(req.getAssetType()),
                 new HoldingQuantity(req.getQuantity()),
                 Money.of(req.getAvgPurchasePrice(), req.getCurrency()),
                 new ThresholdConfig(req.getNotifyGainThresholdPct(), req.getNotifyLossThresholdPct()),
-                req.getFundingAccountId() != null ? new BanksAccountId(req.getFundingAccountId()) : null
+                req.getFundingCbu() != null ? new Cbu(req.getFundingCbu()) : null
         );
     }
 
@@ -126,15 +126,14 @@ public class HoldingController {
         return new UpdateHoldingCommand(
                 new UserId(userId),
                 new HoldingId(id),
-                new BanksAccountId(req.getBankAccountId()),
-                new BankId(req.getBankId()),
+                new Cbu(req.getAccountCbu()),
                 new Ticker(req.getTicker()),
                 req.getName(),
                 AssetType.valueOf(req.getAssetType()),
                 new HoldingQuantity(req.getQuantity()),
                 Money.of(req.getAvgPurchasePrice(), req.getCurrency()),
                 new ThresholdConfig(req.getNotifyGainThresholdPct(), req.getNotifyLossThresholdPct()),
-                req.getFundingAccountId() != null ? new BanksAccountId(req.getFundingAccountId()) : null
+                req.getFundingCbu() != null ? new Cbu(req.getFundingCbu()) : null
         );
     }
 }

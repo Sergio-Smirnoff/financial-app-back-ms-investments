@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.market;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.market.impl.GetMarketDiscoveryUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -61,7 +63,7 @@ class GetMarketDiscoveryUseCaseImplTest {
     }
 
     private static Holding holdingWithTicker(String t) {
-        return new Holding(new HoldingId(1L), USER, new BanksAccountId(10L), new BankId(1L),
+        return new Holding(new HoldingId(1L), USER, new Cbu("0070009000000000000017"),
                 new Ticker(t), "n", AssetType.STOCK,
                 new HoldingQuantity(BigDecimal.ONE), Money.of(BigDecimal.ONE, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

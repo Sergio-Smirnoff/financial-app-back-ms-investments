@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.price;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.price.impl.EvaluateThresholdsUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -98,7 +100,7 @@ class EvaluateThresholdsUseCaseImplTest {
     @Test
     void cooldown_preventsRepeatNotification() {
         LocalDateTime recentlyNotified = LocalDateTime.now().minusHours(1);
-        Holding holding = new Holding(new HoldingId(1L), USER_ID, new BanksAccountId(10L), new BankId(1L),
+        Holding holding = new Holding(new HoldingId(1L), USER_ID, new Cbu("0070009000000000000017"),
                 new Ticker("AAPL"), "Test", AssetType.STOCK,
                 new HoldingQuantity(new BigDecimal("10")),
                 Money.of(new BigDecimal("100"), "ARS"),
@@ -117,7 +119,7 @@ class EvaluateThresholdsUseCaseImplTest {
     @Test
     void cooldown_allows_notificationAfter24Hours() {
         LocalDateTime longAgo = LocalDateTime.now().minusHours(25);
-        Holding holding = new Holding(new HoldingId(1L), USER_ID, new BanksAccountId(10L), new BankId(1L),
+        Holding holding = new Holding(new HoldingId(1L), USER_ID, new Cbu("0070009000000000000017"),
                 new Ticker("AAPL"), "Test", AssetType.STOCK,
                 new HoldingQuantity(new BigDecimal("10")),
                 Money.of(new BigDecimal("100"), "ARS"),
@@ -145,7 +147,7 @@ class EvaluateThresholdsUseCaseImplTest {
     }
 
     private static Holding holdingWithGainThreshold(String ticker, BigDecimal avgPrice, BigDecimal gainPct) {
-        return new Holding(new HoldingId(1L), USER_ID, new BanksAccountId(10L), new BankId(1L),
+        return new Holding(new HoldingId(1L), USER_ID, new Cbu("0070009000000000000017"),
                 new Ticker(ticker), "Test", AssetType.STOCK,
                 new HoldingQuantity(new BigDecimal("10")),
                 Money.of(avgPrice, "ARS"),
@@ -155,7 +157,7 @@ class EvaluateThresholdsUseCaseImplTest {
     }
 
     private static Holding holdingWithLossThreshold(String ticker, BigDecimal avgPrice, BigDecimal lossPct) {
-        return new Holding(new HoldingId(2L), USER_ID, new BanksAccountId(10L), new BankId(1L),
+        return new Holding(new HoldingId(2L), USER_ID, new Cbu("0070009000000000000017"),
                 new Ticker(ticker), "Test", AssetType.STOCK,
                 new HoldingQuantity(new BigDecimal("10")),
                 Money.of(avgPrice, "ARS"),

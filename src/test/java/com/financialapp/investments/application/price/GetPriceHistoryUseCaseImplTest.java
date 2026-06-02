@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.price;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.price.impl.GetPriceHistoryUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -12,7 +14,7 @@ import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.repository.AssetPriceHistoryRepository;
 import com.financialapp.investments.domain.usecase.price.command.GetPriceHistoryCommand;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
+import com.financialapp.investments.domain.exception.IolServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -93,7 +95,7 @@ class GetPriceHistoryUseCaseImplTest {
         when(historyRepository.countByTickerAndPricedAtBetween(TIC, FROM, TO)).thenReturn(0L);
         when(holdingQueryGateway.findFirstByTicker(TIC)).thenReturn(Optional.empty());
         when(iolGateway.getHistoricalSeries(any(), any(), any(), any()))
-                .thenThrow(new InfrastructureException("iol down"));
+                .thenThrow(new IolServiceException("iol down"));
 
         assertThatThrownBy(() -> useCase.execute(new GetPriceHistoryCommand(TIC, FROM, TO)))
                 .isInstanceOf(IolServiceException.class);
@@ -105,7 +107,7 @@ class GetPriceHistoryUseCaseImplTest {
     }
 
     private static Holding holdingWithType(AssetType type) {
-        return new Holding(new HoldingId(1L), new UserId(1L), new BanksAccountId(1L), new BankId(1L),
+        return new Holding(new HoldingId(1L), new UserId(1L), new Cbu("0070009000000000000017"),
                 TIC, "n", type, new HoldingQuantity(BigDecimal.ONE),
                 Money.of(BigDecimal.ONE, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

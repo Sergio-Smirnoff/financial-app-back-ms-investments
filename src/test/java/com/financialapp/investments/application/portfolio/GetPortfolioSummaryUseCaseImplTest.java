@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.portfolio;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.portfolio.impl.GetPortfolioSummaryUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -121,8 +123,7 @@ class GetPortfolioSummaryUseCaseImplTest {
         Holding holding = new Holding(
                 new HoldingId(1L),
                 USER_ID,
-                new BanksAccountId(10L),
-                new BankId(1L),
+                new Cbu("0070009000000000000017"),
                 new Ticker(ticker),
                 "Test " + ticker,
                 AssetType.STOCK,

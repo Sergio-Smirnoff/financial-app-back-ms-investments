@@ -4,7 +4,7 @@ import com.financialapp.investments.infrastructure.gateway.IolApiClient;
 import com.financialapp.investments.infrastructure.gateway.dto.IolHistoricalPricePoint;
 import com.financialapp.investments.infrastructure.gateway.dto.IolMarketQuote;
 import com.financialapp.investments.infrastructure.gateway.dto.IolPriceDetail;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
+import com.financialapp.investments.domain.exception.IolServiceException;
 import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
 import com.financialapp.investments.domain.model.holding.Ticker;
 import com.financialapp.investments.domain.model.market.MarketQuote;
@@ -34,7 +34,7 @@ public class IolGatewayImpl implements IolGateway {
             return iolApiClient.getPrice(ticker.value(), assetType)
                     .map(this::toDomainPriceDetail);
         } catch (RuntimeException e) {
-            throw new InfrastructureException(
+            throw new IolServiceException(
                     "IOL price fetch failed for ticker: " + ticker.value(), e);
         }
     }
@@ -48,7 +48,7 @@ public class IolGatewayImpl implements IolGateway {
                     .map(this::toDomainHistoricalPoint)
                     .toList();
         } catch (RuntimeException e) {
-            throw new InfrastructureException(
+            throw new IolServiceException(
                     "IOL historical series fetch failed for ticker: " + ticker.value(), e);
         }
     }
@@ -61,7 +61,7 @@ public class IolGatewayImpl implements IolGateway {
                     .map(this::toDomainMarketQuote)
                     .toList();
         } catch (RuntimeException e) {
-            throw new InfrastructureException(
+            throw new IolServiceException(
                     "IOL panel quotes fetch failed for panel: " + panel, e);
         }
     }

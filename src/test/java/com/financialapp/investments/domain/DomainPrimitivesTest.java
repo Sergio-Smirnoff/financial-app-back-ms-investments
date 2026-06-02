@@ -3,10 +3,9 @@ package com.financialapp.investments.domain;
 import com.financialapp.investments.domain.common.model.PageRequest;
 import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.event.Direction;
 import com.financialapp.investments.domain.exception.DomainError;
-import com.financialapp.investments.domain.model.holding.BankId;
-import com.financialapp.investments.domain.model.holding.BanksAccountId;
 import com.financialapp.investments.domain.model.holding.HoldingFilter;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.history.AssetPriceHistoryId;
@@ -94,13 +93,14 @@ class DomainPrimitivesTest {
     }
 
     @Test
-    void bankId_null_throws() {
-        assertThatThrownBy(() -> new BankId(null)).isInstanceOf(NullPointerException.class);
+    void cbu_invalid_throws() {
+        assertThatThrownBy(() -> new Cbu(null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Cbu("123")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void banksAccountId_null_throws() {
-        assertThatThrownBy(() -> new BanksAccountId(null)).isInstanceOf(NullPointerException.class);
+    void cbu_valid() {
+        assertThat(new Cbu("0070009000000000000010").value()).isEqualTo("0070009000000000000010");
     }
 
     @Test

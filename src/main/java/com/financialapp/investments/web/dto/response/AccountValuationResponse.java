@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class AccountValuationResponse {
-    private Long accountId;
+    private String accountCbu;
     private String totalValuation;
     private String currency;
 }

@@ -7,7 +7,7 @@ import com.financialapp.investments.domain.event.HoldingClosedEvent;
 import com.financialapp.investments.domain.event.HoldingCreatedEvent;
 import com.financialapp.investments.domain.event.HoldingUpdatedEvent;
 import com.financialapp.investments.domain.event.PriceThresholdBreachedEvent;
-import com.financialapp.investments.domain.model.holding.BanksAccountId;
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
 import com.financialapp.investments.domain.model.holding.Ticker;
@@ -24,7 +24,7 @@ class DomainEventsTest {
     private static final UserId USER = new UserId(1L);
     private static final HoldingId HID = new HoldingId(10L);
     private static final Ticker TIC = new Ticker("AAPL");
-    private static final BanksAccountId ACC = new BanksAccountId(100L);
+    private static final Cbu ACC = new Cbu("0070009000000000000100");
     private static final Money ARS_100 = Money.of(new BigDecimal("100"), "ARS");
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 1, 0, 0);
 
@@ -37,8 +37,8 @@ class DomainEventsTest {
         assertThat(e.userId()).isEqualTo(USER);
         assertThat(e.ticker()).isEqualTo(TIC);
         assertThat(e.assetType()).isEqualTo(AssetType.STOCK);
-        assertThat(e.bankAccountId()).isEqualTo(ACC);
-        assertThat(e.fundingAccountId()).isEqualTo(ACC);
+        assertThat(e.accountCbu()).isEqualTo(ACC);
+        assertThat(e.fundingCbu()).isEqualTo(ACC);
         assertThat(e.totalCost()).isEqualTo(ARS_100);
         assertThat(e.occurredAt()).isEqualTo(NOW);
     }
@@ -48,7 +48,7 @@ class DomainEventsTest {
         HoldingCreatedEvent e = new HoldingCreatedEvent(
                 HID, USER, TIC, AssetType.STOCK, ACC, null,
                 new HoldingQuantity(BigDecimal.ONE), ARS_100, ARS_100, NOW);
-        assertThat(e.fundingAccountId()).isNull();
+        assertThat(e.fundingCbu()).isNull();
     }
 
     @Test
@@ -61,7 +61,7 @@ class DomainEventsTest {
         assertThat(e.newQuantity().value()).isEqualByComparingTo("2");
         assertThat(e.previousQuantity().value()).isEqualByComparingTo("1");
         assertThat(e.costDifference()).isEqualTo(ARS_100);
-        assertThat(e.fundingAccountId()).isEqualTo(ACC);
+        assertThat(e.fundingCbu()).isEqualTo(ACC);
     }
 
     @Test
@@ -69,7 +69,7 @@ class DomainEventsTest {
         HoldingClosedEvent e = new HoldingClosedEvent(
                 HID, USER, TIC, ACC, ACC, ARS_100, NOW);
         assertThat(e.holdingId()).isEqualTo(HID);
-        assertThat(e.depositAccountId()).isEqualTo(ACC);
+        assertThat(e.destinationCbu()).isEqualTo(ACC);
         assertThat(e.proceedsAmount()).isEqualTo(ARS_100);
         assertThat(e.occurredAt()).isEqualTo(NOW);
     }

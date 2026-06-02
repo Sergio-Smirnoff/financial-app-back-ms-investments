@@ -56,8 +56,8 @@ class ResponseDtoTest {
     @Test
     void simpleResponseDtos_buildAndExpose() {
         AccountValuationResponse a = AccountValuationResponse.builder()
-                .accountId(1L).totalValuation("10").currency("ARS").build();
-        assertThat(a.getAccountId()).isEqualTo(1L);
+                .accountCbu("0070009000000000000001").totalValuation("10").currency("ARS").build();
+        assertThat(a.getAccountCbu()).isEqualTo("0070009000000000000001");
         assertThat(a.getTotalValuation()).isEqualTo("10");
         assertThat(a.getCurrency()).isEqualTo("ARS");
 

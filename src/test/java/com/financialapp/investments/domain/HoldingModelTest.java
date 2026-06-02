@@ -1,9 +1,8 @@
 package com.financialapp.investments.domain;
 
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
-import com.financialapp.investments.domain.model.holding.BankId;
-import com.financialapp.investments.domain.model.holding.BanksAccountId;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
@@ -22,22 +21,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class HoldingModelTest {
 
     private static final UserId USER = new UserId(1L);
-    private static final BanksAccountId ACC = new BanksAccountId(10L);
-    private static final BankId BANK = new BankId(2L);
+    private static final Cbu ACC = new Cbu("0070009000000000000010");
     private static final Ticker TIC = new Ticker("AAPL");
     private static final HoldingQuantity QTY = new HoldingQuantity(BigDecimal.ONE);
     private static final Money PRICE = Money.of(new BigDecimal("100"), "ARS");
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 1, 0, 0);
 
     private Holding sample() {
-        return new Holding(new HoldingId(1L), USER, ACC, BANK, TIC, "Apple",
+        return new Holding(new HoldingId(1L), USER, ACC, TIC, "Apple",
                 AssetType.STOCK, QTY, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW);
     }
 
     @Test
     void blankName_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, TIC, "   ",
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, TIC, "   ",
                 AssetType.STOCK, QTY, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -45,7 +43,7 @@ class HoldingModelTest {
 
     @Test
     void nullUserId_throws() {
-        assertThatThrownBy(() -> new Holding(null, null, ACC, BANK, TIC, "n",
+        assertThatThrownBy(() -> new Holding(null, null, ACC, TIC, "n",
                 AssetType.STOCK, QTY, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(NullPointerException.class);
@@ -53,7 +51,7 @@ class HoldingModelTest {
 
     @Test
     void nullName_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, TIC, null,
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, TIC, null,
                 AssetType.STOCK, QTY, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(NullPointerException.class);
@@ -61,7 +59,7 @@ class HoldingModelTest {
 
     @Test
     void nullAssetType_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, TIC, "n",
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, TIC, "n",
                 null, QTY, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(NullPointerException.class);
@@ -69,7 +67,7 @@ class HoldingModelTest {
 
     @Test
     void nullQuantity_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, TIC, "n",
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, TIC, "n",
                 AssetType.STOCK, null, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(NullPointerException.class);
@@ -77,7 +75,7 @@ class HoldingModelTest {
 
     @Test
     void nullPrice_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, TIC, "n",
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, TIC, "n",
                 AssetType.STOCK, QTY, null, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(NullPointerException.class);
@@ -85,7 +83,7 @@ class HoldingModelTest {
 
     @Test
     void nullTicker_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, null, "n",
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, null, "n",
                 AssetType.STOCK, QTY, PRICE, ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW))
                 .isInstanceOf(NullPointerException.class);
@@ -93,7 +91,7 @@ class HoldingModelTest {
 
     @Test
     void nullNotificationTimestamps_throws() {
-        assertThatThrownBy(() -> new Holding(null, USER, ACC, BANK, TIC, "n",
+        assertThatThrownBy(() -> new Holding(null, USER, ACC, TIC, "n",
                 AssetType.STOCK, QTY, PRICE, ThresholdConfig.disabled(),
                 null, NOW, NOW))
                 .isInstanceOf(NullPointerException.class);

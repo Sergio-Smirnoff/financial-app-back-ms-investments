@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.holding;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.holding.impl.GetAccountValuationUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -34,11 +36,11 @@ class GetAccountValuationUseCaseImplTest {
     @Mock private AssetPriceRepository assetPriceRepository;
     @InjectMocks private GetAccountValuationUseCaseImpl useCase;
 
-    private static final BanksAccountId ACC = new BanksAccountId(10L);
+    private static final Cbu ACC = new Cbu("0070009000000000000099");
 
     @Test
     void execute_noHoldings_returnsZero_ARS() {
-        when(holdingQueryGateway.findByBankAccountId(ACC)).thenReturn(List.of());
+        when(holdingQueryGateway.findByAccountCbu(ACC)).thenReturn(List.of());
         AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(ACC));
         assertThat(r.totalValuation()).isEqualByComparingTo("0");
         assertThat(r.currency()).isEqualTo("ARS");
@@ -49,7 +51,7 @@ class GetAccountValuationUseCaseImplTest {
     void execute_singleCurrency_computesValuation_usingMarketPrice() {
         Holding h1 = holding("AAPL", new BigDecimal("2"), new BigDecimal("100"), "ARS");
         Holding h2 = holding("GOOG", new BigDecimal("3"), new BigDecimal("50"), "ARS");
-        when(holdingQueryGateway.findByBankAccountId(ACC)).thenReturn(List.of(h1, h2));
+        when(holdingQueryGateway.findByAccountCbu(ACC)).thenReturn(List.of(h1, h2));
         when(assetPriceRepository.findAllByTickerIn(any())).thenReturn(List.of(
                 assetPrice("AAPL", new BigDecimal("200"))));
 
@@ -65,14 +67,14 @@ class GetAccountValuationUseCaseImplTest {
     void execute_mixedCurrency_throwsResourceConflict() {
         Holding ars = holding("AAPL", BigDecimal.ONE, BigDecimal.TEN, "ARS");
         Holding usd = holding("GOOG", BigDecimal.ONE, BigDecimal.TEN, "USD");
-        when(holdingQueryGateway.findByBankAccountId(ACC)).thenReturn(List.of(ars, usd));
+        when(holdingQueryGateway.findByAccountCbu(ACC)).thenReturn(List.of(ars, usd));
 
         assertThatThrownBy(() -> useCase.execute(new GetAccountValuationCommand(ACC)))
                 .isInstanceOf(ResourceConflictException.class);
     }
 
     private static Holding holding(String ticker, BigDecimal qty, BigDecimal price, String ccy) {
-        return new Holding(new HoldingId(1L), new UserId(1L), ACC, new BankId(1L),
+        return new Holding(new HoldingId(1L), new UserId(1L), ACC,
                 new Ticker(ticker), "n", AssetType.STOCK,
                 new HoldingQuantity(qty), Money.of(price, ccy),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

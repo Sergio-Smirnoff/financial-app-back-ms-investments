@@ -5,7 +5,7 @@ import com.financialapp.investments.domain.model.holding.Ticker;
 import com.financialapp.investments.domain.model.market.MarketQuote;
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.model.price.PriceDetail;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
+import com.financialapp.investments.domain.exception.IolServiceException;
 import com.financialapp.investments.infrastructure.gateway.IolApiClient;
 import com.financialapp.investments.infrastructure.gateway.dto.IolHistoricalPricePoint;
 import com.financialapp.investments.infrastructure.gateway.dto.IolMarketQuote;
@@ -58,7 +58,7 @@ class IolGatewayImplTest {
     void getPrice_failure_wrappedAsInfrastructure() {
         when(apiClient.getPrice(any(), any())).thenThrow(new RuntimeException("boom"));
         assertThatThrownBy(() -> gateway.getPrice(TIC, AssetType.STOCK))
-                .isInstanceOf(InfrastructureException.class);
+                .isInstanceOf(IolServiceException.class);
     }
 
     @Test
@@ -78,7 +78,7 @@ class IolGatewayImplTest {
         when(apiClient.getHistoricalSeries(any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("boom"));
         assertThatThrownBy(() -> gateway.getHistoricalSeries(TIC, AssetType.STOCK, D1, D2))
-                .isInstanceOf(InfrastructureException.class);
+                .isInstanceOf(IolServiceException.class);
     }
 
     @Test
@@ -98,6 +98,6 @@ class IolGatewayImplTest {
     void getPanelQuotes_failure_wrapped() {
         when(apiClient.getPanelQuotes(any())).thenThrow(new RuntimeException("boom"));
         assertThatThrownBy(() -> gateway.getPanelQuotes("x"))
-                .isInstanceOf(InfrastructureException.class);
+                .isInstanceOf(IolServiceException.class);
     }
 }

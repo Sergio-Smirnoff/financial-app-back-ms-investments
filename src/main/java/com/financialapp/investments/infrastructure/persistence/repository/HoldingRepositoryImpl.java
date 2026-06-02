@@ -1,5 +1,6 @@
 package com.financialapp.investments.infrastructure.persistence.repository;
 
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.PageRequest;
 import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -87,13 +88,13 @@ public class HoldingRepositoryImpl implements HoldingRepository, HoldingQueryGat
     }
 
     @Override
-    public List<Holding> findByBankAccountId(BanksAccountId accountId) {
-        return jpaRepository.findByBankAccountId(accountId.value())
+    public List<Holding> findByAccountCbu(Cbu accountCbu) {
+        return jpaRepository.findByAccountCbu(accountCbu.value())
                 .stream().map(mapper::toDomain).toList();
     }
 
     @Override
-    public long countByBankAccountId(BanksAccountId accountId) {
-        return jpaRepository.countByBankAccountId(accountId.value());
+    public long countByAccountCbu(Cbu accountCbu) {
+        return jpaRepository.countByAccountCbu(accountCbu.value());
     }
 }

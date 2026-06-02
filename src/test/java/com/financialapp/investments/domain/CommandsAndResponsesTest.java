@@ -1,10 +1,9 @@
 package com.financialapp.investments.domain;
 
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.PageRequest;
 import com.financialapp.investments.domain.common.model.UserId;
-import com.financialapp.investments.domain.model.holding.BankId;
-import com.financialapp.investments.domain.model.holding.BanksAccountId;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
@@ -44,8 +43,7 @@ class CommandsAndResponsesTest {
 
     private static final UserId USER = new UserId(1L);
     private static final HoldingId HID = new HoldingId(10L);
-    private static final BanksAccountId ACC = new BanksAccountId(100L);
-    private static final BankId BANK = new BankId(2L);
+    private static final Cbu ACC = new Cbu("0070009000000000000100");
     private static final Ticker TIC = new Ticker("AAPL");
     private static final HoldingQuantity QTY = new HoldingQuantity(BigDecimal.ONE);
     private static final Money ARS = Money.of(new BigDecimal("100"), "ARS");
@@ -55,19 +53,19 @@ class CommandsAndResponsesTest {
     @Test
     void holdingCommands_accessors() {
         CloseHoldingCommand c = new CloseHoldingCommand(USER, HID, ACC);
-        assertThat(c.destinationAccountId()).isEqualTo(ACC);
+        assertThat(c.destinationCbu()).isEqualTo(ACC);
 
-        CreateHoldingCommand cr = new CreateHoldingCommand(USER, ACC, BANK, TIC, "n",
+        CreateHoldingCommand cr = new CreateHoldingCommand(USER, ACC, TIC, "n",
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
         assertThat(cr.ticker()).isEqualTo(TIC);
-        assertThat(cr.fundingAccountId()).isEqualTo(ACC);
+        assertThat(cr.fundingCbu()).isEqualTo(ACC);
 
-        UpdateHoldingCommand up = new UpdateHoldingCommand(USER, HID, ACC, BANK, TIC, "n",
+        UpdateHoldingCommand up = new UpdateHoldingCommand(USER, HID, ACC, TIC, "n",
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
         assertThat(up.newQuantity()).isEqualTo(QTY);
 
         GetAccountValuationCommand g = new GetAccountValuationCommand(ACC);
-        assertThat(g.accountId()).isEqualTo(ACC);
+        assertThat(g.accountCbu()).isEqualTo(ACC);
 
         GetHoldingDetailCommand d = new GetHoldingDetailCommand(USER, HID);
         assertThat(d.holdingId()).isEqualTo(HID);
@@ -114,7 +112,7 @@ class CommandsAndResponsesTest {
 
     @Test
     void holdingWithPriceResult_accessors() {
-        Holding h = new Holding(HID, USER, ACC, BANK, TIC, "n", AssetType.STOCK, QTY, ARS,
+        Holding h = new Holding(HID, USER, ACC, TIC, "n", AssetType.STOCK, QTY, ARS,
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(), NOW, NOW);
         HoldingWithPriceResult r = new HoldingWithPriceResult(h, BigDecimal.ONE,
                 BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO);

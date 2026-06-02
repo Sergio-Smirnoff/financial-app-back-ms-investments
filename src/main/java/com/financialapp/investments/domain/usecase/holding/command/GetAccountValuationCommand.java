@@ -1,5 +1,5 @@
 package com.financialapp.investments.domain.usecase.holding.command;
 
-import com.financialapp.investments.domain.model.holding.BanksAccountId;
+import com.financialapp.investments.domain.common.model.Cbu;
 
-public record GetAccountValuationCommand(BanksAccountId accountId) {}
+public record GetAccountValuationCommand(Cbu accountCbu) {}

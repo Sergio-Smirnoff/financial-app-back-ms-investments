@@ -4,11 +4,9 @@ import com.financialapp.investments.domain.usecase.holding.command.UpdateHolding
 import com.financialapp.investments.domain.usecase.holding.UpdateHoldingUseCase;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.event.HoldingUpdatedEvent;
-import com.financialapp.investments.domain.exception.BanksServiceException;
 import com.financialapp.investments.domain.exception.ResourceNotFoundException;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
 import com.financialapp.investments.domain.model.holding.Holding;
-import com.financialapp.investments.domain.gateway.BanksGateway;
+import com.financialapp.investments.domain.gateway.FinancesGateway;
 import com.financialapp.investments.domain.gateway.DomainEventPublisher;
 import com.financialapp.investments.domain.repository.HoldingRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +21,7 @@ import java.time.LocalDateTime;
 public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
 
     private final HoldingRepository holdingRepository;
-    private final BanksGateway banksGateway;
+    private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
 
     @Override
@@ -37,19 +35,18 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
         Money newTotalCost = command.newAvgPurchasePrice().multiply(command.newQuantity().value());
         Money costDifference = newTotalCost.subtract(oldTotalCost);
 
-        if (command.fundingAccountId() != null) {
-            try {
-                banksGateway.adjustBalance(command.fundingAccountId(), costDifference.negate());
-            } catch (InfrastructureException e) {
-                throw new BanksServiceException("Failed to adjust funding account for holding update", e);
+        if (command.fundingCbu() != null && costDifference.amount().signum() != 0) {
+            if (costDifference.amount().signum() > 0) {
+                financesGateway.recordPurchase(command.userId(), command.fundingCbu(), costDifference);
+            } else {
+                financesGateway.recordSaleProceeds(command.userId(), command.fundingCbu(), costDifference.negate());
             }
         }
 
         Holding updated = new Holding(
                 existing.id(),
                 existing.userId(),
-                command.bankAccountId(),
-                command.bankId(),
+                command.accountCbu(),
                 existing.ticker(),
                 command.name(),
                 existing.assetType(),
@@ -65,7 +62,7 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
 
         eventPublisher.publish(new HoldingUpdatedEvent(
                 saved.id(), saved.userId(), saved.ticker(),
-                saved.bankAccountId(), command.fundingAccountId(),
+                saved.accountCbu(), command.fundingCbu(),
                 saved.quantity(), existing.quantity(),
                 saved.avgPurchasePrice(), costDifference,
                 LocalDateTime.now()

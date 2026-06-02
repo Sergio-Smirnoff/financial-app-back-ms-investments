@@ -1,5 +1,7 @@
 package com.financialapp.investments.application.portfolio;
 
+import com.financialapp.investments.domain.common.model.Cbu;
+
 import com.financialapp.investments.application.portfolio.impl.GetHoldingsWithPricesUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -65,7 +67,7 @@ class GetHoldingsWithPricesUseCaseImplTest {
 
     @Test
     void execute_zeroCostBasis_plPercentIsZero() {
-        Holding h = new Holding(new HoldingId(1L), USER, new BanksAccountId(1L), new BankId(1L),
+        Holding h = new Holding(new HoldingId(1L), USER, new Cbu("0070009000000000000017"),
                 new Ticker("AAPL"), "n", AssetType.STOCK,
                 new HoldingQuantity(BigDecimal.ONE), Money.of(BigDecimal.ZERO, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),
@@ -79,7 +81,7 @@ class GetHoldingsWithPricesUseCaseImplTest {
     }
 
     private static Holding holding(String ticker, BigDecimal qty, BigDecimal price) {
-        return new Holding(new HoldingId(1L), USER, new BanksAccountId(1L), new BankId(1L),
+        return new Holding(new HoldingId(1L), USER, new Cbu("0070009000000000000017"),
                 new Ticker(ticker), "n", AssetType.STOCK,
                 new HoldingQuantity(qty), Money.of(price, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

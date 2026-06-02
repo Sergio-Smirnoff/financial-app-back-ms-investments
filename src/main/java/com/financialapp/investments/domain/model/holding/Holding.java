@@ -1,5 +1,6 @@
 package com.financialapp.investments.domain.model.holding;
 
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.price.AssetType;
@@ -10,8 +11,7 @@ import java.util.Objects;
 public record Holding(
         HoldingId id,
         UserId userId,
-        BanksAccountId bankAccountId,
-        BankId bankId,
+        Cbu accountCbu,
         Ticker ticker,
         String name,
         AssetType assetType,
@@ -33,9 +33,16 @@ public record Holding(
         Objects.requireNonNull(notificationTimestamps, "notificationTimestamps must not be null — use NotificationTimestamps.empty()");
     }
 
-    public Holding withNotificationTimestamps(NotificationTimestamps timestamps) {
-        return new Holding(id, userId, bankAccountId, bankId, ticker, name, assetType,
-                quantity, avgPurchasePrice, thresholdConfig, timestamps, createdAt, LocalDateTime.now());
+    public static Holding create(UserId userId, Cbu accountCbu, Ticker ticker, String name,
+                                 AssetType assetType, HoldingQuantity quantity, Money avgPurchasePrice,
+                                 ThresholdConfig thresholdConfig) {
+        LocalDateTime now = LocalDateTime.now();
+        return new Holding(new HoldingId(null), userId, accountCbu, ticker, name, assetType,
+                quantity, avgPurchasePrice, thresholdConfig, NotificationTimestamps.empty(), now, now);
     }
 
+    public Holding withNotificationTimestamps(NotificationTimestamps timestamps) {
+        return new Holding(id, userId, accountCbu, ticker, name, assetType,
+                quantity, avgPurchasePrice, thresholdConfig, timestamps, createdAt, LocalDateTime.now());
+    }
 }

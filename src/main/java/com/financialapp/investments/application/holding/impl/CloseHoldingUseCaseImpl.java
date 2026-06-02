@@ -4,11 +4,9 @@ import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingC
 import com.financialapp.investments.domain.usecase.holding.CloseHoldingUseCase;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.event.HoldingClosedEvent;
-import com.financialapp.investments.domain.exception.BanksServiceException;
 import com.financialapp.investments.domain.exception.ResourceNotFoundException;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
 import com.financialapp.investments.domain.model.holding.Holding;
-import com.financialapp.investments.domain.gateway.BanksGateway;
+import com.financialapp.investments.domain.gateway.FinancesGateway;
 import com.financialapp.investments.domain.gateway.DomainEventPublisher;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
@@ -25,7 +23,7 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
 
     private final HoldingRepository holdingRepository;
     private final AssetPriceRepository assetPriceRepository;
-    private final BanksGateway banksGateway;
+    private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
 
     @Override
@@ -41,19 +39,15 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
 
         Money proceeds = unitPrice.multiply(holding.quantity().value());
 
-        if (command.destinationAccountId() != null) {
-            try {
-                banksGateway.adjustBalance(command.destinationAccountId(), proceeds);
-            } catch (InfrastructureException e) {
-                throw new BanksServiceException("Failed to credit destination account on holding close", e);
-            }
+        if (command.destinationCbu() != null) {
+            financesGateway.recordSaleProceeds(command.userId(), command.destinationCbu(), proceeds);
         }
 
         holdingRepository.delete(holding.id());
 
         eventPublisher.publish(new HoldingClosedEvent(
                 holding.id(), holding.userId(), holding.ticker(),
-                holding.bankAccountId(), command.destinationAccountId(),
+                holding.accountCbu(), command.destinationCbu(),
                 proceeds, LocalDateTime.now()
         ));
     }

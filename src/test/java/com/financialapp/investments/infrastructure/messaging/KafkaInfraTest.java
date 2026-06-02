@@ -3,7 +3,6 @@ package com.financialapp.investments.infrastructure.messaging;
 import com.financialapp.investments.domain.common.DomainEvent;
 import com.financialapp.investments.infrastructure.messaging.mapper.InvestmentKafkaMapper;
 import com.financialapp.investments.infrastructure.messaging.payload.InvestmentThresholdPayload;
-import com.financialapp.investments.infrastructure.messaging.payload.PaymentPayload;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -67,21 +66,6 @@ class KafkaInfraTest {
         assertThat(e.topic()).isEqualTo("t");
         assertThat(e.key()).isEqualTo("k");
         assertThat(e.payload()).isEqualTo("p");
-    }
-
-    @Test
-    void paymentPayload_lombokBuilderAndAccessors() {
-        PaymentPayload p = PaymentPayload.builder()
-                .userId(1L).accountId(2L).amount(BigDecimal.TEN)
-                .currency("ARS").description("d").date(null).build();
-        assertThat(p.getUserId()).isEqualTo(1L);
-        assertThat(p.getAccountId()).isEqualTo(2L);
-        assertThat(p.getAmount()).isEqualByComparingTo("10");
-        assertThat(p.getCurrency()).isEqualTo("ARS");
-
-        PaymentPayload empty = new PaymentPayload();
-        empty.setUserId(99L);
-        assertThat(empty.getUserId()).isEqualTo(99L);
     }
 
     @Test

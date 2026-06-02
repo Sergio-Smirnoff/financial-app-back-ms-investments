@@ -29,10 +29,10 @@ public class GetAccountValuationUseCaseImpl implements GetAccountValuationUseCas
 
     @Override
     public AccountValuationResult execute(GetAccountValuationCommand command) {
-        List<Holding> holdings = holdingQueryGateway.findByBankAccountId(command.accountId());
+        List<Holding> holdings = holdingQueryGateway.findByAccountCbu(command.accountCbu());
 
         if (holdings.isEmpty()) {
-            return new AccountValuationResult(command.accountId(), BigDecimal.ZERO, "ARS", 0);
+            return new AccountValuationResult(command.accountCbu(), BigDecimal.ZERO, "ARS", 0);
         }
 
         long distinctCurrencies = holdings.stream()
@@ -41,7 +41,7 @@ public class GetAccountValuationUseCaseImpl implements GetAccountValuationUseCas
                 .count();
         if (distinctCurrencies > 1) {
             throw new ResourceConflictException(
-                    "Account " + command.accountId().value()
+                    "Account " + command.accountCbu().value()
                             + " holds assets in multiple currencies; use portfolio summary instead.");
         }
 
@@ -63,6 +63,6 @@ public class GetAccountValuationUseCaseImpl implements GetAccountValuationUseCas
 
         String currency = holdings.getFirst().avgPurchasePrice().currency().getCurrencyCode();
 
-        return new AccountValuationResult(command.accountId(), totalValuation, currency, holdings.size());
+        return new AccountValuationResult(command.accountCbu(), totalValuation, currency, holdings.size());
     }
 }

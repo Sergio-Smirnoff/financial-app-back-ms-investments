@@ -1,13 +1,14 @@
 package com.financialapp.investments.application.holding;
 
 import com.financialapp.investments.application.holding.impl.CloseHoldingUseCaseImpl;
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.event.HoldingClosedEvent;
-import com.financialapp.investments.domain.exception.BanksServiceException;
+import com.financialapp.investments.domain.exception.FinancesServiceException;
 import com.financialapp.investments.domain.exception.ResourceNotFoundException;
-import com.financialapp.investments.domain.gateway.BanksGateway;
 import com.financialapp.investments.domain.gateway.DomainEventPublisher;
+import com.financialapp.investments.domain.gateway.FinancesGateway;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetPrice;
 import com.financialapp.investments.domain.model.price.AssetPriceId;
@@ -15,7 +16,6 @@ import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
 import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -44,7 +44,7 @@ class CloseHoldingUseCaseImplTest {
     @Mock
     private AssetPriceRepository assetPriceRepository;
     @Mock
-    private BanksGateway banksGateway;
+    private FinancesGateway financesGateway;
     @Mock
     private DomainEventPublisher eventPublisher;
 
@@ -52,19 +52,19 @@ class CloseHoldingUseCaseImplTest {
     private CloseHoldingUseCaseImpl useCase;
 
     private static final UserId USER_ID = new UserId(1L);
-    private static final BanksAccountId DEPOSIT_ACCOUNT = new BanksAccountId(30L);
+    private static final Cbu DESTINATION_CBU = new Cbu("0070009000000000000099");
 
     @Test
-    void close_adjustsBalanceWithProceeds_andPublishesEvent() {
+    void close_recordsSaleProceeds_andPublishesEvent() {
         Holding holding = holding("AAPL", new BigDecimal("10"), new BigDecimal("150"));
         when(holdingRepository.findByIdAndUserId(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
         when(assetPriceRepository.findByTicker(new Ticker("AAPL")))
                 .thenReturn(Optional.of(assetPrice("AAPL", new BigDecimal("200"))));
 
-        useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), DEPOSIT_ACCOUNT));
+        useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), DESTINATION_CBU));
 
         ArgumentCaptor<Money> moneyCaptor = ArgumentCaptor.forClass(Money.class);
-        verify(banksGateway).adjustBalance(eq(DEPOSIT_ACCOUNT), moneyCaptor.capture());
+        verify(financesGateway).recordSaleProceeds(eq(USER_ID), eq(DESTINATION_CBU), moneyCaptor.capture());
         assertThat(moneyCaptor.getValue().amount()).isEqualByComparingTo(new BigDecimal("2000"));
 
         verify(holdingRepository).delete(holding.id());
@@ -82,10 +82,10 @@ class CloseHoldingUseCaseImplTest {
         when(holdingRepository.findByIdAndUserId(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
         when(assetPriceRepository.findByTicker(any(Ticker.class))).thenReturn(Optional.empty());
 
-        useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), DEPOSIT_ACCOUNT));
+        useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), DESTINATION_CBU));
 
         ArgumentCaptor<Money> moneyCaptor = ArgumentCaptor.forClass(Money.class);
-        verify(banksGateway).adjustBalance(eq(DEPOSIT_ACCOUNT), moneyCaptor.capture());
+        verify(financesGateway).recordSaleProceeds(eq(USER_ID), eq(DESTINATION_CBU), moneyCaptor.capture());
         assertThat(moneyCaptor.getValue().amount()).isEqualByComparingTo(new BigDecimal("500"));
     }
 
@@ -94,43 +94,43 @@ class CloseHoldingUseCaseImplTest {
         when(holdingRepository.findByIdAndUserId(any(HoldingId.class), eq(USER_ID))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                useCase.execute(new CloseHoldingCommand(USER_ID, new HoldingId(999L), DEPOSIT_ACCOUNT)))
+                useCase.execute(new CloseHoldingCommand(USER_ID, new HoldingId(999L), DESTINATION_CBU)))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
-    void close_throwsBanksServiceException_whenBanksGatewayFails() {
+    void close_throwsFinancesServiceException_whenFinancesFails() {
         Holding holding = holding("AAPL", new BigDecimal("10"), new BigDecimal("150"));
         when(holdingRepository.findByIdAndUserId(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
         when(assetPriceRepository.findByTicker(any(Ticker.class))).thenReturn(Optional.empty());
-        doThrow(new InfrastructureException("Banks down"))
-                .when(banksGateway).adjustBalance(any(), any());
+        doThrow(new FinancesServiceException("Finances down", null))
+                .when(financesGateway).recordSaleProceeds(any(), any(), any());
 
         assertThatThrownBy(() ->
-                useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), DEPOSIT_ACCOUNT)))
-                .isInstanceOf(BanksServiceException.class);
+                useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), DESTINATION_CBU)))
+                .isInstanceOf(FinancesServiceException.class);
 
         verify(holdingRepository, never()).delete(any());
     }
 
     @Test
-    void close_nullDestinationAccountId_skipsBalance_andPublishesEvent() {
+    void close_nullDestination_skipsFinances_andPublishesEvent() {
         Holding holding = holding("AAPL", new BigDecimal("10"), new BigDecimal("150"));
         when(holdingRepository.findByIdAndUserId(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
         when(assetPriceRepository.findByTicker(any(Ticker.class))).thenReturn(Optional.empty());
 
         useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), null));
 
-        verify(banksGateway, never()).adjustBalance(any(), any());
+        verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
         verify(holdingRepository).delete(holding.id());
 
         ArgumentCaptor<HoldingClosedEvent> eventCaptor = ArgumentCaptor.forClass(HoldingClosedEvent.class);
         verify(eventPublisher).publish(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().depositAccountId()).isNull();
+        assertThat(eventCaptor.getValue().destinationCbu()).isNull();
     }
 
     private static Holding holding(String ticker, BigDecimal quantity, BigDecimal avgPrice) {
-        return new Holding(new HoldingId(42L), USER_ID, new BanksAccountId(10L), new BankId(1L),
+        return new Holding(new HoldingId(42L), USER_ID, new Cbu("0070009000000000000017"),
                 new Ticker(ticker), "Test Holding", AssetType.STOCK,
                 new HoldingQuantity(quantity), Money.of(avgPrice, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

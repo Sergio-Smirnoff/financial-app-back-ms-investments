@@ -41,6 +41,12 @@ investments:
   currencies:
     # Whitelist of ISO 4217 codes accepted on inbound holdings.
     supported: [ARS, USD, EUR]
+  integration:
+    finances-category-id: ${INVEST_FINANCES_CATEGORY_ID:12}
+    broker-cbu:
+      ARS: ${INVEST_BROKER_CBU_ARS:9990009000000000000001}
+      USD: ${INVEST_BROKER_CBU_USD:9990009000000000000002}
+      EUR: ${INVEST_BROKER_CBU_EUR:9990009000000000000003}
 
 iol:
   base-url: ${IOL_BASE_URL:https://api.invertironline.com}
@@ -48,9 +54,9 @@ iol:
   password: ${IOL_PASSWORD:?IOL_PASSWORD must be set}
   price-refresh-cron: ${IOL_PRICE_REFRESH_CRON:0 */15 10-17 * * MON-FRI}
 
-banks:
+finances:
   service:
-    url: ${BANKS_SERVICE_URL:http://localhost:8083}
+    url: ${FINANCES_SERVICE_URL:http://localhost:8082}
 
 internal:
   auth:

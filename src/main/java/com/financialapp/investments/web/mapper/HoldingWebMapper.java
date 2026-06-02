@@ -21,8 +21,7 @@ public class HoldingWebMapper {
         return HoldingResponse.builder()
                 .id(holding.id() != null ? holding.id().value() : null)
                 .userId(holding.userId().value())
-                .bankId(holding.bankId() != null ? holding.bankId().value() : null)
-                .bankAccountId(holding.bankAccountId() != null ? holding.bankAccountId().value() : null)
+                .accountCbu(holding.accountCbu() != null ? holding.accountCbu().value() : null)
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
@@ -43,8 +42,7 @@ public class HoldingWebMapper {
         return HoldingWithPriceResponse.builder()
                 .id(holding.id() != null ? holding.id().value() : null)
                 .userId(holding.userId().value())
-                .bankId(holding.bankId() != null ? holding.bankId().value() : null)
-                .bankAccountId(holding.bankAccountId() != null ? holding.bankAccountId().value() : null)
+                .accountCbu(holding.accountCbu() != null ? holding.accountCbu().value() : null)
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
@@ -71,8 +69,7 @@ public class HoldingWebMapper {
         return HoldingDetailResponse.builder()
                 .id(holding.id() != null ? holding.id().value() : null)
                 .userId(holding.userId().value())
-                .bankId(holding.bankId() != null ? holding.bankId().value() : null)
-                .bankAccountId(holding.bankAccountId() != null ? holding.bankAccountId().value() : null)
+                .accountCbu(holding.accountCbu() != null ? holding.accountCbu().value() : null)
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
@@ -94,7 +91,7 @@ public class HoldingWebMapper {
 
     public AccountValuationResponse toValuationResponse(AccountValuationResult result) {
         return AccountValuationResponse.builder()
-                .accountId(result.accountId().value())
+                .accountCbu(result.accountCbu().value())
                 .totalValuation(toPlain(result.totalValuation()))
                 .currency(result.currency())
                 .build();

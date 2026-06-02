@@ -3,7 +3,6 @@ package com.financialapp.investments.application.price.impl;
 import com.financialapp.investments.domain.gateway.HoldingQueryGateway;
 import com.financialapp.investments.domain.usecase.price.RefreshPricesUseCase;
 import com.financialapp.investments.domain.exception.IolServiceException;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
 import com.financialapp.investments.domain.model.history.AssetPriceHistory;
 import com.financialapp.investments.domain.model.history.AssetPriceHistoryId;
 import com.financialapp.investments.domain.model.holding.Holding;
@@ -80,7 +79,7 @@ public class RefreshPricesUseCaseImpl implements RefreshPricesUseCase {
 
                 job = refreshJobRepository.save(job.advance(i));
 
-            } catch (InfrastructureException e) {
+            } catch (IolServiceException e) {
                 refreshJobRepository.save(job.interrupt(e.getMessage()));
                 throw new IolServiceException(
                         "Price refresh interrupted at ticker: " + tickerValue, e);

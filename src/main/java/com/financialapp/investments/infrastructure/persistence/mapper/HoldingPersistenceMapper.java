@@ -1,5 +1,6 @@
 package com.financialapp.investments.infrastructure.persistence.mapper;
 
+import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.*;
@@ -15,8 +16,7 @@ public class HoldingPersistenceMapper {
         return new Holding(
                 new HoldingId(e.getId()),
                 new UserId(e.getUserId()),
-                e.getBankAccountId() != null ? new BanksAccountId(e.getBankAccountId()) : null,
-                e.getBankId() != null ? new BankId(e.getBankId()) : null,
+                e.getAccountCbu() != null ? new Cbu(e.getAccountCbu()) : null,
                 new Ticker(e.getTicker()),
                 e.getName(),
                 e.getAssetType(),
@@ -33,8 +33,7 @@ public class HoldingPersistenceMapper {
         return HoldingJpaEntity.builder()
                 .id(h.id() != null ? h.id().value() : null)
                 .userId(h.userId().value())
-                .bankAccountId(h.bankAccountId() != null ? h.bankAccountId().value() : null)
-                .bankId(h.bankId() != null ? h.bankId().value() : null)
+                .accountCbu(h.accountCbu() != null ? h.accountCbu().value() : null)
                 .ticker(h.ticker().value())
                 .name(h.name())
                 .assetType(h.assetType())

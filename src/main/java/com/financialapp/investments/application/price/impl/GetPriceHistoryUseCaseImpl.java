@@ -3,8 +3,6 @@ package com.financialapp.investments.application.price.impl;
 import com.financialapp.investments.domain.gateway.HoldingQueryGateway;
 import com.financialapp.investments.domain.usecase.price.command.GetPriceHistoryCommand;
 import com.financialapp.investments.domain.usecase.price.GetPriceHistoryUseCase;
-import com.financialapp.investments.domain.exception.IolServiceException;
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
 import com.financialapp.investments.domain.model.history.AssetPriceHistory;
 import com.financialapp.investments.domain.model.history.AssetPriceHistoryId;
 import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
@@ -49,14 +47,8 @@ public class GetPriceHistoryUseCaseImpl implements GetPriceHistoryUseCase {
                 .map(Holding::assetType)
                 .orElse(AssetType.STOCK);
 
-        List<HistoricalPricePoint> points;
-        try {
-            points = iolGateway.getHistoricalSeries(ticker, assetType,
-                    from.toLocalDate(), to.toLocalDate());
-        } catch (InfrastructureException e) {
-            throw new IolServiceException(
-                    "Failed to backfill price history for: " + ticker.value(), e);
-        }
+        List<HistoricalPricePoint> points = iolGateway.getHistoricalSeries(
+                ticker, assetType, from.toLocalDate(), to.toLocalDate());
 
         for (HistoricalPricePoint point : points) {
             if (!historyRepository.existsByTickerAndPricedAt(ticker, point.pricedAt())) {
