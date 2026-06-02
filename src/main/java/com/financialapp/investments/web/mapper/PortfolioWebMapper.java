@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+import static com.financialapp.investments.web.mapper.BigDecimals.toPlain;
+
 @Component
 public class PortfolioWebMapper {
 
@@ -37,10 +39,10 @@ public class PortfolioWebMapper {
     private CurrencyTotalsResponse toCurrencyTotalsResponse(CurrencyTotals totals) {
         return CurrencyTotalsResponse.builder()
                 .currency(totals.currency().getCurrencyCode())
-                .totalValue(totals.totalValue().amount())
-                .totalCost(totals.totalCost().amount())
-                .totalPl(totals.totalPl().amount())
-                .plPercent(totals.plPercent())
+                .totalValue(toPlain(totals.totalValue().amount()))
+                .totalCost(toPlain(totals.totalCost().amount()))
+                .totalPl(toPlain(totals.totalPl().amount()))
+                .plPercent(toPlain(totals.plPercent()))
                 .breakdown(toBreakdowns(totals.breakdown()))
                 .build();
     }
@@ -48,7 +50,7 @@ public class PortfolioWebMapper {
     private CurrencyTotalsByDay toCurrencyTotalsByDay(Money m) {
         return CurrencyTotalsByDay.builder()
                 .currency(m.currency().getCurrencyCode())
-                .totalValue(m.amount())
+                .totalValue(toPlain(m.amount()))
                 .build();
     }
 
@@ -57,8 +59,8 @@ public class PortfolioWebMapper {
         return results.stream()
                 .map(r -> AllocationBreakdown.builder()
                         .assetType(r.assetType().name())
-                        .totalValue(r.totalValue().amount())
-                        .percentage(r.percentage())
+                        .totalValue(toPlain(r.totalValue().amount()))
+                        .percentage(toPlain(r.percentage()))
                         .build())
                 .toList();
     }

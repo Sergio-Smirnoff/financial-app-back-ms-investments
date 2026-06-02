@@ -3,14 +3,12 @@ package com.financialapp.investments.web.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
-
 @Getter
 @Builder
 public class MarketDiscoveryResponse {
     private String ticker;
-    private BigDecimal price;
+    private String price;
     private String currency;
-    private BigDecimal variation;
-    private BigDecimal volume;
+    private String variation;
+    private String volume;
 }

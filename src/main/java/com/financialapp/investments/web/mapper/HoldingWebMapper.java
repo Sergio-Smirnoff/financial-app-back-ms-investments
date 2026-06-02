@@ -11,6 +11,8 @@ import com.financialapp.investments.web.dto.response.HoldingResponse;
 import com.financialapp.investments.web.dto.response.HoldingWithPriceResponse;
 import org.springframework.stereotype.Component;
 
+import static com.financialapp.investments.web.mapper.BigDecimals.toPlain;
+
 @Component
 public class HoldingWebMapper {
 
@@ -24,11 +26,11 @@ public class HoldingWebMapper {
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
-                .quantity(holding.quantity().value())
-                .avgPurchasePrice(holding.avgPurchasePrice().amount())
+                .quantity(toPlain(holding.quantity().value()))
+                .avgPurchasePrice(toPlain(holding.avgPurchasePrice().amount()))
                 .currency(holding.avgPurchasePrice().currency().getCurrencyCode())
-                .notifyGainThresholdPct(tc != null ? tc.gainPct() : null)
-                .notifyLossThresholdPct(tc != null ? tc.lossPct() : null)
+                .notifyGainThresholdPct(tc != null ? toPlain(tc.gainPct()) : null)
+                .notifyLossThresholdPct(tc != null ? toPlain(tc.lossPct()) : null)
                 .createdAt(holding.createdAt())
                 .updatedAt(holding.updatedAt())
                 .build();
@@ -46,19 +48,19 @@ public class HoldingWebMapper {
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
-                .quantity(holding.quantity().value())
-                .avgPurchasePrice(holding.avgPurchasePrice().amount())
+                .quantity(toPlain(holding.quantity().value()))
+                .avgPurchasePrice(toPlain(holding.avgPurchasePrice().amount()))
                 .currency(holding.avgPurchasePrice().currency().getCurrencyCode())
-                .notifyGainThresholdPct(tc != null ? tc.gainPct() : null)
-                .notifyLossThresholdPct(tc != null ? tc.lossPct() : null)
+                .notifyGainThresholdPct(tc != null ? toPlain(tc.gainPct()) : null)
+                .notifyLossThresholdPct(tc != null ? toPlain(tc.lossPct()) : null)
                 .lastGainNotifiedAt(ts != null ? ts.lastGainNotifiedAt() : null)
                 .lastLossNotifiedAt(ts != null ? ts.lastLossNotifiedAt() : null)
                 .createdAt(holding.createdAt())
                 .updatedAt(holding.updatedAt())
-                .currentPrice(result.currentPrice())
-                .currentValue(result.currentValue())
-                .plAmount(result.plAmount())
-                .plPercent(result.plPercent())
+                .currentPrice(toPlain(result.currentPrice()))
+                .currentValue(toPlain(result.currentValue()))
+                .plAmount(toPlain(result.plAmount()))
+                .plPercent(toPlain(result.plPercent()))
                 .build();
     }
 
@@ -74,26 +76,26 @@ public class HoldingWebMapper {
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
-                .quantity(holding.quantity().value())
-                .avgPurchasePrice(holding.avgPurchasePrice().amount())
+                .quantity(toPlain(holding.quantity().value()))
+                .avgPurchasePrice(toPlain(holding.avgPurchasePrice().amount()))
                 .currency(holding.avgPurchasePrice().currency().getCurrencyCode())
-                .notifyGainThresholdPct(tc != null ? tc.gainPct() : null)
-                .notifyLossThresholdPct(tc != null ? tc.lossPct() : null)
+                .notifyGainThresholdPct(tc != null ? toPlain(tc.gainPct()) : null)
+                .notifyLossThresholdPct(tc != null ? toPlain(tc.lossPct()) : null)
                 .lastGainNotifiedAt(ts != null ? ts.lastGainNotifiedAt() : null)
                 .lastLossNotifiedAt(ts != null ? ts.lastLossNotifiedAt() : null)
                 .createdAt(holding.createdAt())
                 .updatedAt(holding.updatedAt())
-                .currentPrice(result.currentPrice())
-                .currentValue(result.currentValue())
-                .plAmount(result.plAmount())
-                .plPercent(result.plPercent())
+                .currentPrice(toPlain(result.currentPrice()))
+                .currentValue(toPlain(result.currentValue()))
+                .plAmount(toPlain(result.plAmount()))
+                .plPercent(toPlain(result.plPercent()))
                 .build();
     }
 
     public AccountValuationResponse toValuationResponse(AccountValuationResult result) {
         return AccountValuationResponse.builder()
                 .accountId(result.accountId().value())
-                .totalValuation(result.totalValuation())
+                .totalValuation(toPlain(result.totalValuation()))
                 .currency(result.currency())
                 .build();
     }

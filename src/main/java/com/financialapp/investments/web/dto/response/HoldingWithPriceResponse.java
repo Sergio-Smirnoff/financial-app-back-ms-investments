@@ -3,7 +3,6 @@ package com.financialapp.investments.web.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -16,17 +15,17 @@ public class HoldingWithPriceResponse {
     private String ticker;
     private String name;
     private String assetType;
-    private BigDecimal quantity;
-    private BigDecimal avgPurchasePrice;
+    private String quantity;
+    private String avgPurchasePrice;
     private String currency;
-    private BigDecimal notifyGainThresholdPct;
-    private BigDecimal notifyLossThresholdPct;
+    private String notifyGainThresholdPct;
+    private String notifyLossThresholdPct;
     private LocalDateTime lastGainNotifiedAt;
     private LocalDateTime lastLossNotifiedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private BigDecimal currentPrice;
-    private BigDecimal currentValue;
-    private BigDecimal plAmount;
-    private BigDecimal plPercent;
+    private String currentPrice;
+    private String currentValue;
+    private String plAmount;
+    private String plPercent;
 }
