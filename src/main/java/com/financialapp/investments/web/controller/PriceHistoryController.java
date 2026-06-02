@@ -21,6 +21,9 @@ import java.util.List;
 @Tag(name = "Price History")
 public class PriceHistoryController {
 
+    // Missing range = "all history": fall back to a wide look-back window.
+    private static final int DEFAULT_LOOKBACK_YEARS = 10;
+
     private final GetPriceHistoryUseCase getPriceHistoryUseCase;
     private final PriceWebMapper priceWebMapper;
 
@@ -31,8 +34,10 @@ public class PriceHistoryController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        LocalDateTime resolvedTo = to != null ? to : LocalDateTime.now();
+        LocalDateTime resolvedFrom = from != null ? from : resolvedTo.minusYears(DEFAULT_LOOKBACK_YEARS);
         List<PriceHistoryResponse> history = getPriceHistoryUseCase
-                .execute(new GetPriceHistoryCommand(new Ticker(ticker), from, to))
+                .execute(new GetPriceHistoryCommand(new Ticker(ticker), resolvedFrom, resolvedTo))
                 .stream()
                 .map(priceWebMapper::toResponse)
                 .toList();

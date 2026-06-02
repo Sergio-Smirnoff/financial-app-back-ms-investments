@@ -81,6 +81,7 @@ public class InvestmentKafkaMapper {
     }
 
     private TransactionalKafkaEvent toPaymentEvent(HoldingClosedEvent e) {
+        if (e.depositAccountId() == null) return null;
         PaymentPayload payload = PaymentPayload.builder()
                 .userId(e.userId().value())
                 .accountId(e.depositAccountId().value())

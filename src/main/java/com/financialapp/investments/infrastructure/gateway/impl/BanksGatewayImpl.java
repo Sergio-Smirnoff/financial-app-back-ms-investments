@@ -9,6 +9,8 @@ import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Component
 @RequiredArgsConstructor
 public class BanksGatewayImpl implements BanksGateway {
@@ -17,6 +19,7 @@ public class BanksGatewayImpl implements BanksGateway {
 
     @Override
     public void adjustBalance(BanksAccountId accountId, Money amount) {
+        Objects.requireNonNull(accountId, "accountId");
         try {
             banksClient.adjustBalance(accountId.value(), amount.amount(), amount.currency().getCurrencyCode());
         } catch (FeignException e) {

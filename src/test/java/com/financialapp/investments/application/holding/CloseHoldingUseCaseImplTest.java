@@ -113,6 +113,22 @@ class CloseHoldingUseCaseImplTest {
         verify(holdingRepository, never()).delete(any());
     }
 
+    @Test
+    void close_nullDestinationAccountId_skipsBalance_andPublishesEvent() {
+        Holding holding = holding("AAPL", new BigDecimal("10"), new BigDecimal("150"));
+        when(holdingRepository.findByIdAndUserId(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
+        when(assetPriceRepository.findByTicker(any(Ticker.class))).thenReturn(Optional.empty());
+
+        useCase.execute(new CloseHoldingCommand(USER_ID, holding.id(), null));
+
+        verify(banksGateway, never()).adjustBalance(any(), any());
+        verify(holdingRepository).delete(holding.id());
+
+        ArgumentCaptor<HoldingClosedEvent> eventCaptor = ArgumentCaptor.forClass(HoldingClosedEvent.class);
+        verify(eventPublisher).publish(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().depositAccountId()).isNull();
+    }
+
     private static Holding holding(String ticker, BigDecimal quantity, BigDecimal avgPrice) {
         return new Holding(new HoldingId(42L), USER_ID, new BanksAccountId(10L), new BankId(1L),
                 new Ticker(ticker), "Test Holding", AssetType.STOCK,

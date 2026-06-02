@@ -37,10 +37,12 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
         Money newTotalCost = command.newAvgPurchasePrice().multiply(command.newQuantity().value());
         Money costDifference = newTotalCost.subtract(oldTotalCost);
 
-        try {
-            banksGateway.adjustBalance(command.fundingAccountId(), costDifference.negate());
-        } catch (InfrastructureException e) {
-            throw new BanksServiceException("Failed to adjust funding account for holding update", e);
+        if (command.fundingAccountId() != null) {
+            try {
+                banksGateway.adjustBalance(command.fundingAccountId(), costDifference.negate());
+            } catch (InfrastructureException e) {
+                throw new BanksServiceException("Failed to adjust funding account for holding update", e);
+            }
         }
 
         Holding updated = new Holding(
