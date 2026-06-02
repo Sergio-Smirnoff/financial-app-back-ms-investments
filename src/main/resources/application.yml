@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/financialapp?currentSchema=investments}
     username: ${DB_USERNAME:financialapp}
-    password: ${DB_PASSWORD:?DB_PASSWORD must be set}
+    password: ${DB_PASSWORD:changeme}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
