@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v2/bCBA/Titulos/GGAL/CotizacionDetalle"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "bodyFileName": "iol-price.json"
+  }
+}

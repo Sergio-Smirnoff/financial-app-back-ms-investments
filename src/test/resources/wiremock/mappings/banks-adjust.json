@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/api/v1/banks/accounts/[0-9]+/balance/adjust"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "bodyFileName": "banks-ok.json"
+  }
+}
