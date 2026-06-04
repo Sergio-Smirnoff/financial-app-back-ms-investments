@@ -6,3 +6,10 @@ target/
 .vscode/
 *.iml
 .DS_Store
+
+CLAUDE.md
+.claude/
+
+.classpath
+.project
+.settings/
