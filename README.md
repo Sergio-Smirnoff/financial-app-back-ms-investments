@@ -48,6 +48,12 @@ INVESTMENT accounts in ms-banks are metadata only — they throw on any balance 
 
 ## API Endpoints
 
+All endpoints return the shared envelope `{ status, title, code, message, data }` from
+`commons-core` (built from `financial-app-parent`). `code` appears only on errors and carries the
+`DomainError` slug (e.g. `holding_quantity_invalid`); error details travel in `data`. Errors are
+rendered by `GlobalExceptionHandler extends ApiExceptionHandler` (commons-web), and endpoints
+declare their throwable codes with `@ApiErrorCodes` (generated Swagger examples).
+
 ### Holdings — `/api/v1/investments/holdings`
 
 | Method | Path | Purpose |

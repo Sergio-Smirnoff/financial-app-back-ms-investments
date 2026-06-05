@@ -1,6 +1,6 @@
 package com.financialapp.investments.web.dto.response;
 
-import com.financialapp.investments.infrastructure.exception.InfrastructureException;
+import com.financialapp.investments.domain.exception.InfrastructureException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

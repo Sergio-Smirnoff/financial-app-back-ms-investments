@@ -1,7 +1,7 @@
 package com.financialapp.investments.domain.exception.holding;
 
 import com.financialapp.investments.domain.exception.DomainError;
-import com.financialapp.investments.domain.exception.DomainException;
+import com.financialapp.commons.core.error.DomainException;
 
 public class HoldingCurrencyMismatchException extends DomainException {
 

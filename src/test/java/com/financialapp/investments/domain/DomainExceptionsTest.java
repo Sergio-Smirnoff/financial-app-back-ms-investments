@@ -21,27 +21,27 @@ class DomainExceptionsTest {
     @Test
     void resourceNotFound_mapsError() {
         ResourceNotFoundException e = new ResourceNotFoundException("missing");
-        assertThat(e.error()).isEqualTo(DomainError.RESOURCE_NOT_FOUND);
+        assertThat(e.getError()).isEqualTo(DomainError.RESOURCE_NOT_FOUND);
         assertThat(e.getMessage()).isEqualTo("missing");
     }
 
     @Test
     void resourceAlreadyExists_mapsError() {
         ResourceAlreadyExistsException e = new ResourceAlreadyExistsException("dup");
-        assertThat(e.error()).isEqualTo(DomainError.RESOURCE_ALREADY_EXISTS);
+        assertThat(e.getError()).isEqualTo(DomainError.RESOURCE_ALREADY_EXISTS);
         assertThat(e.getMessage()).isEqualTo("dup");
     }
 
     @Test
     void resourceConflict_mapsError() {
         ResourceConflictException e = new ResourceConflictException("conflict");
-        assertThat(e.error()).isEqualTo(DomainError.RESOURCE_CONFLICT);
+        assertThat(e.getError()).isEqualTo(DomainError.RESOURCE_CONFLICT);
     }
 
     @Test
     void iolService_messageOnly_constructor() {
         IolServiceException e = new IolServiceException("io fail");
-        assertThat(e.error()).isEqualTo(DomainError.IOL_SERVICE_UNAVAILABLE);
+        assertThat(e.getError()).isEqualTo(DomainError.IOL_SERVICE_UNAVAILABLE);
         assertThat(e.getCause()).isNull();
     }
 
@@ -55,7 +55,7 @@ class DomainExceptionsTest {
     @Test
     void banksService_messageOnly_constructor() {
         BanksServiceException e = new BanksServiceException("banks down");
-        assertThat(e.error()).isEqualTo(DomainError.BANKS_SERVICE_UNAVAILABLE);
+        assertThat(e.getError()).isEqualTo(DomainError.BANKS_SERVICE_UNAVAILABLE);
         assertThat(e.getCause()).isNull();
     }
 
@@ -70,21 +70,21 @@ class DomainExceptionsTest {
     void unsupportedCurrency_listsAllowedSorted() {
         UnsupportedCurrencyException e = new UnsupportedCurrencyException(
                 "EUR", Set.of(Currency.getInstance("ARS"), Currency.getInstance("USD")));
-        assertThat(e.error()).isEqualTo(DomainError.UNSUPPORTED_CURRENCY);
+        assertThat(e.getError()).isEqualTo(DomainError.UNSUPPORTED_CURRENCY);
         assertThat(e.getMessage()).contains("EUR").contains("[ARS, USD]");
     }
 
     @Test
     void holdingCurrencyMismatch_formatsExpectedActual() {
         HoldingCurrencyMismatchException e = new HoldingCurrencyMismatchException("ARS", "USD");
-        assertThat(e.error()).isEqualTo(DomainError.HOLDING_CURRENCY_MISMATCH);
+        assertThat(e.getError()).isEqualTo(DomainError.HOLDING_CURRENCY_MISMATCH);
         assertThat(e.getMessage()).contains("ARS").contains("USD");
     }
 
     @Test
     void holdingQuantityNonPositive_defaultMessage() {
         HoldingQuantityNonPositiveException e = new HoldingQuantityNonPositiveException();
-        assertThat(e.error()).isEqualTo(DomainError.HOLDING_QUANTITY_INVALID);
+        assertThat(e.getError()).isEqualTo(DomainError.HOLDING_QUANTITY_INVALID);
         assertThat(e.getMessage()).contains("greater than zero");
     }
 }

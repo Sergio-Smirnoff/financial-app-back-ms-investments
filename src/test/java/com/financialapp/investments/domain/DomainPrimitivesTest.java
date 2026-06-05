@@ -5,6 +5,7 @@ import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.event.Direction;
+import com.financialapp.commons.core.error.ErrorCategory;
 import com.financialapp.investments.domain.exception.DomainError;
 import com.financialapp.investments.domain.model.holding.HoldingFilter;
 import com.financialapp.investments.domain.model.holding.HoldingId;
@@ -73,11 +74,11 @@ class DomainPrimitivesTest {
     }
 
     @Test
-    void domainError_exposesHttpAndCode() {
-        assertThat(DomainError.RESOURCE_NOT_FOUND.httpStatusCode()).isEqualTo(404);
+    void domainError_exposesCategoryAndCode() {
+        assertThat(DomainError.RESOURCE_NOT_FOUND.category()).isEqualTo(ErrorCategory.NOT_FOUND);
         assertThat(DomainError.RESOURCE_NOT_FOUND.code()).isEqualTo("resource_not_found");
-        assertThat(DomainError.HOLDING_QUANTITY_INVALID.httpStatusCode()).isEqualTo(422);
-        assertThat(DomainError.INTERNAL_ERROR.httpStatusCode()).isEqualTo(500);
+        assertThat(DomainError.HOLDING_QUANTITY_INVALID.category()).isEqualTo(ErrorCategory.UNPROCESSABLE);
+        assertThat(DomainError.INTERNAL_ERROR.category()).isEqualTo(ErrorCategory.INTERNAL_SERVER_ERROR);
         for (DomainError e : DomainError.values()) {
             assertThat(e.code()).isNotBlank();
         }

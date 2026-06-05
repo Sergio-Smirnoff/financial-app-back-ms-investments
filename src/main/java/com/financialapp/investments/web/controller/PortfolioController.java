@@ -11,7 +11,9 @@ import com.financialapp.investments.domain.usecase.portfolio.GetPortfolioEvoluti
 import com.financialapp.investments.domain.usecase.portfolio.GetPortfolioSummaryUseCase;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.HoldingId;
-import com.financialapp.investments.web.dto.response.ApiResponse;
+import com.financialapp.commons.core.response.ApiResponse;
+import com.financialapp.commons.web.openapi.ApiErrorCodes;
+import com.financialapp.investments.domain.exception.DomainError;
 import com.financialapp.investments.web.dto.response.HoldingDetailResponse;
 import com.financialapp.investments.web.dto.response.HoldingWithPriceResponse;
 import com.financialapp.investments.web.dto.response.PortfolioEvolutionResponse;
@@ -62,6 +64,7 @@ public class PortfolioController {
 
     @GetMapping("/holdings/{holdingId}")
     @Operation(summary = "Get single holding detail with current price and P&L")
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found"})
     public ResponseEntity<ApiResponse<HoldingDetailResponse>> getHoldingDetail(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long holdingId) {

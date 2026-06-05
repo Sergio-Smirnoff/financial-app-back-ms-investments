@@ -90,7 +90,7 @@ class HoldingControllerTest {
                         .header("X-Internal-Token", TOKEN)
                         .header("X-User-Id", USER_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.status").value(200));
     }
 
     // --- create ---
@@ -105,7 +105,7 @@ class HoldingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(201))
                 .andExpect(jsonPath("$.data.ticker").value("AAPL"))
                 .andExpect(jsonPath("$.data.assetType").value("STOCK"));
     }
@@ -145,7 +145,7 @@ class HoldingControllerTest {
                         .header("X-Internal-Token", TOKEN)
                         .header("X-User-Id", USER_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.status").value(200));
     }
 
     @Test

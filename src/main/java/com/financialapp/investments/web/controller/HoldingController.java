@@ -10,7 +10,9 @@ import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
-import com.financialapp.investments.web.dto.response.ApiResponse;
+import com.financialapp.commons.core.response.ApiResponse;
+import com.financialapp.commons.web.openapi.ApiErrorCodes;
+import com.financialapp.investments.domain.exception.DomainError;
 import com.financialapp.investments.web.dto.request.HoldingRequest;
 import com.financialapp.investments.web.dto.response.AccountValuationResponse;
 import com.financialapp.investments.web.dto.response.HoldingResponse;
@@ -77,16 +79,18 @@ public class HoldingController {
 
     @PostMapping
     @Operation(summary = "Create a new holding")
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_already_exists", "holding_quantity_invalid", "holding_currency_mismatch", "unsupported_currency", "banks_service_unavailable"})
     public ResponseEntity<ApiResponse<HoldingResponse>> create(
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody HoldingRequest request) {
         Holding holding = createHoldingUseCase.execute(toCreateCommand(userId, request));
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Holding created", holdingWebMapper.toResponse(holding)));
+                .body(ApiResponse.created("Holding created", holdingWebMapper.toResponse(holding)));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a holding")
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "holding_quantity_invalid", "holding_currency_mismatch", "unsupported_currency"})
     public ResponseEntity<ApiResponse<HoldingResponse>> update(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
@@ -97,6 +101,7 @@ public class HoldingController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete (Sell) a holding")
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "resource_conflict", "finances_service_unavailable"})
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,

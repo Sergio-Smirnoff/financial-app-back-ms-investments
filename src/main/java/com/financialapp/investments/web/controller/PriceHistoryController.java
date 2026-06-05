@@ -3,7 +3,9 @@ package com.financialapp.investments.web.controller;
 import com.financialapp.investments.domain.usecase.price.command.GetPriceHistoryCommand;
 import com.financialapp.investments.domain.usecase.price.GetPriceHistoryUseCase;
 import com.financialapp.investments.domain.model.holding.Ticker;
-import com.financialapp.investments.web.dto.response.ApiResponse;
+import com.financialapp.commons.core.response.ApiResponse;
+import com.financialapp.commons.web.openapi.ApiErrorCodes;
+import com.financialapp.investments.domain.exception.DomainError;
 import com.financialapp.investments.web.dto.response.PriceHistoryResponse;
 import com.financialapp.investments.web.mapper.PriceWebMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +30,7 @@ public class PriceHistoryController {
     private final PriceWebMapper priceWebMapper;
 
     @GetMapping("/{ticker}")
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found"})
     public ResponseEntity<ApiResponse<List<PriceHistoryResponse>>> getHistory(
             @PathVariable String ticker,
             @RequestParam(required = false)

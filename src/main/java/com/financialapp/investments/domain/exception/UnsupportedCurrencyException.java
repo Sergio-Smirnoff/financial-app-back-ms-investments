@@ -1,5 +1,7 @@
 package com.financialapp.investments.domain.exception;
 
+import com.financialapp.commons.core.error.DomainException;
+
 import java.util.Currency;
 import java.util.Set;
 import java.util.stream.Collectors;
