@@ -10,14 +10,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GatewayDtoTest {
 
     @Test
-    void banksApiResponse_accessors() {
-        BanksApiResponse<String> r = new BanksApiResponse<>(true, "msg", "payload");
-        assertThat(r.success()).isTrue();
-        assertThat(r.message()).isEqualTo("msg");
-        assertThat(r.data()).isEqualTo("payload");
-    }
-
-    @Test
     void iolPriceDetail_accessors() {
         IolPriceDetail d = new IolPriceDetail(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE,
                 BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);

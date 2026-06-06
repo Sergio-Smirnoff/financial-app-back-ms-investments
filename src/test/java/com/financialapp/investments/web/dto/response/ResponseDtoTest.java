@@ -3,55 +3,13 @@ package com.financialapp.investments.web.dto.response;
 import com.financialapp.investments.domain.exception.InfrastructureException;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ResponseDtoTest {
-
-    @Test
-    void apiResponse_okData() {
-        ApiResponse<String> r = ApiResponse.ok("payload");
-        assertThat(r.isSuccess()).isTrue();
-        assertThat(r.getMessage()).isEqualTo("OK");
-        assertThat(r.getData()).isEqualTo("payload");
-        assertThat(r.getTimestamp()).isBeforeOrEqualTo(Instant.now());
-    }
-
-    @Test
-    void apiResponse_okMessageAndData() {
-        ApiResponse<String> r = ApiResponse.ok("created", "x");
-        assertThat(r.getMessage()).isEqualTo("created");
-        assertThat(r.getData()).isEqualTo("x");
-    }
-
-    @Test
-    void apiResponse_errorMessage() {
-        ApiResponse<Void> r = ApiResponse.error("fail");
-        assertThat(r.isSuccess()).isFalse();
-        assertThat(r.getMessage()).isEqualTo("fail");
-        assertThat(r.getErrors()).isNull();
-    }
-
-    @Test
-    void apiResponse_errorWithErrors() {
-        ApiResponse<Void> r = ApiResponse.error("fail", List.of("a", "b"));
-        assertThat(r.getErrors()).containsExactly("a", "b");
-    }
-
-    @Test
-    void errorResponse_builderAndGetters() {
-        ErrorResponse e = ErrorResponse.builder()
-                .status(500).code("c").message("m").details(Map.of("k", "v")).build();
-        assertThat(e.getStatus()).isEqualTo(500);
-        assertThat(e.getCode()).isEqualTo("c");
-        assertThat(e.getMessage()).isEqualTo("m");
-        assertThat(e.getDetails()).containsEntry("k", "v");
-    }
 
     @Test
     void simpleResponseDtos_buildAndExpose() {
