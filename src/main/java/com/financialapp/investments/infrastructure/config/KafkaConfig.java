@@ -9,8 +9,8 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaConfig {
 
     @Bean
-    public NewTopic investmentThresholdTopic() {
-        return TopicBuilder.name("investment.threshold.reached")
+    public NewTopic investmentsThresholdBreachedTopic() {
+        return TopicBuilder.name("investments.threshold.breached")
                 .partitions(1)
                 .replicas(1)
                 .build();

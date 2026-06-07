@@ -18,6 +18,7 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - com.financialapp.commons.messaging.infrastructure.messaging.config.KafkaCloudEventConfig
 
 investments:
   currencies:
