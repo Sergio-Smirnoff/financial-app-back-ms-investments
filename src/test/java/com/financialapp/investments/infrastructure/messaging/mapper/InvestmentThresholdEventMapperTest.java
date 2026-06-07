@@ -84,7 +84,12 @@ class InvestmentThresholdEventMapperTest {
         assertThat(node.has("holdingId")).isTrue();
         assertThat(node.get("holdingId").asLong()).isEqualTo(42L);
         assertThat(node.get("ticker").asText()).isEqualTo("AAPL");
+        assertThat(node.get("name").asText()).isEqualTo("Apple Inc");
         assertThat(node.get("direction").asText()).isEqualTo("GAIN");
+        assertThat(node.get("thresholdPct").decimalValue()).isEqualByComparingTo(new BigDecimal("10"));
+        assertThat(node.get("actualPct").decimalValue()).isEqualByComparingTo(new BigDecimal("12"));
+        assertThat(node.get("currentPrice").decimalValue()).isEqualByComparingTo(new BigDecimal("100"));
+        assertThat(node.get("avgPurchasePrice").decimalValue()).isEqualByComparingTo(new BigDecimal("100"));
         assertThat(node.get("currency").asText()).isEqualTo("ARS");
         assertThat(node.has("data")).isFalse();
         assertThat(node.has("payload")).isFalse();
