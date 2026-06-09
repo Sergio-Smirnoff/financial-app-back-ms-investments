@@ -10,7 +10,7 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 
 - Java 21, Spring Boot 3.4.2 (MVC), Spring Data JPA, Flyway
 - IOL API client — OAuth2 password-grant, Resilience4j `@Retry` + `@CircuitBreaker`
-- Kafka producer (threshold breach events, holding lifecycle events)
+- Kafka producer (CloudEvents 1.0, binary mode): `investments.threshold.breached` via transactional outbox + commons `OutboxRelay`; producer-only (no consumers)
 - MapStruct, Lombok
 - Feign client → ms-finances (buy/sell cash-flow recording)
 
@@ -38,7 +38,7 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 | `MarketDiscoveryScheduler` | Fixed-rate `IOL_DISCOVERY_REFRESH_RATE` (default 15 min) | Sync panel quotes |
 | `PortfolioSnapshotScheduler` | Daily midnight | Capture per-user portfolio snapshots |
 
-After each price refresh `EvaluateThresholdsUseCase` checks P&L % against each holding's `ThresholdConfig`. On breach it publishes `PriceThresholdBreachedEvent` via Kafka and stamps the matching `NotificationTimestamps` field to prevent re-notification.
+After each price refresh `EvaluateThresholdsUseCase` checks P&L % against each holding's `ThresholdConfig`. On breach it writes an `investments.threshold.breached` CloudEvent (1.0, binary mode; `data` = `InvestmentThresholdData`) to the `outbox_event` table in the same DB transaction — the commons `OutboxRelay` publishes it to Kafka (consumed by ms-notifications) — and stamps the matching `NotificationTimestamps` field to prevent re-notification.
 
 ### Bank-contract integration
 
@@ -218,11 +218,9 @@ src/main/java/com/financialapp/investments/
 │   │   ├── dto/
 │   │   └── impl/
 │   ├── messaging/
-│   │   ├── KafkaDomainEventPublisher.java
-│   │   ├── TransactionalKafkaEvent.java
-│   │   ├── TransactionalKafkaListener.java
-│   │   ├── mapper/
-│   │   └── payload/
+│   │   ├── KafkaDomainEventPublisher.java       # DomainEventPublisher → writes outbox records
+│   │   ├── mapper/   (InvestmentThresholdEventMapper)
+│   │   └── payload/  (InvestmentThresholdData)
 │   ├── persistence/
 │   │   ├── entity/
 │   │   ├── jpa/
