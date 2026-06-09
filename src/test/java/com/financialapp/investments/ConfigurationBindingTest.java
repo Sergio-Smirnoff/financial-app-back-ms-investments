@@ -5,8 +5,8 @@ import com.financialapp.investments.infrastructure.config.CurrenciesProperties;
 import com.financialapp.investments.infrastructure.config.FeignConfig;
 import com.financialapp.investments.infrastructure.config.InternalAuthFilter;
 import com.financialapp.investments.infrastructure.config.IolProperties;
+import com.financialapp.commons.messaging.infrastructure.messaging.relay.OutboxEventPublisher;
 import feign.RequestInterceptor;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +19,6 @@ import java.util.Currency;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled("Requires live infra (Postgres/Kafka); re-enable with Testcontainers")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 class ConfigurationBindingTest {
@@ -30,6 +29,9 @@ class ConfigurationBindingTest {
 
     @MockBean
     KafkaTemplate<String, Object> kafkaTemplate;
+
+    @MockBean
+    OutboxEventPublisher outboxEventPublisher;
 
     @Test
     void iolPropertiesBound_allFieldsPresent() {
