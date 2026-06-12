@@ -126,7 +126,7 @@ class WebMappersTest {
 
     @Test
     void holdingMapper_toValuationResponse() {
-        AccountValuationResult r = new AccountValuationResult(BANK, new BigDecimal("500.00"), "USD", 3L);
+        AccountValuationResult r = new AccountValuationResult(BANK, Money.of(new BigDecimal("500.00"), "USD"), 3L);
         AccountValuationResponse resp = holdingMapper.toValuationResponse(r);
         assertThat(resp.getBankNumber()).isEqualTo("007");
         assertThat(resp.getTotalValuation()).isEqualTo("500.00");
@@ -134,10 +134,11 @@ class WebMappersTest {
     }
 
     @Test
-    void holdingMapper_toValuationResponse_nullTotal_remainsNull() {
-        AccountValuationResult r = new AccountValuationResult(BANK, null, "USD", 0L);
+    void holdingMapper_toValuationResponse_zeroTotal() {
+        AccountValuationResult r = new AccountValuationResult(BANK, Money.zero("USD"), 0L);
         AccountValuationResponse resp = holdingMapper.toValuationResponse(r);
-        assertThat(resp.getTotalValuation()).isNull();
+        assertThat(resp.getTotalValuation()).isEqualTo("0");
+        assertThat(resp.getCurrency()).isEqualTo("USD");
     }
 
     // -------- PortfolioWebMapper --------

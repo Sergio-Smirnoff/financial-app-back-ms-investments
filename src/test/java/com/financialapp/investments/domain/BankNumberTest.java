@@ -15,11 +15,6 @@ class BankNumberTest {
     }
 
     @Test
-    void extracts_from_cbu_prefix() {
-        assertThat(BankNumber.fromCbu("0070099530000012345678").value()).isEqualTo("007");
-    }
-
-    @Test
     void rejects_non_three_digits() {
         assertThatThrownBy(() -> new BankNumber("7")).isInstanceOf(InvalidBankNumberException.class);
         assertThatThrownBy(() -> new BankNumber("0070")).isInstanceOf(InvalidBankNumberException.class);

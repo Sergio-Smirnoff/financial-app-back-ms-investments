@@ -99,9 +99,9 @@ class CommandsAndResponsesTest {
 
     @Test
     void accountValuationResult_accessors() {
-        AccountValuationResult r = new AccountValuationResult(BANK, BigDecimal.TEN, "ARS", 3L);
-        assertThat(r.totalValuation()).isEqualByComparingTo("10");
-        assertThat(r.currency()).isEqualTo("ARS");
+        AccountValuationResult r = new AccountValuationResult(BANK, Money.of(BigDecimal.TEN, "ARS"), 3L);
+        assertThat(r.totalValuation().amount()).isEqualByComparingTo("10");
+        assertThat(r.totalValuation().currency().getCurrencyCode()).isEqualTo("ARS");
         assertThat(r.holdingCount()).isEqualTo(3L);
     }
 

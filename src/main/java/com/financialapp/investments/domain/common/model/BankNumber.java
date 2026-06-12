@@ -14,13 +14,6 @@ public record BankNumber(String value) {
         }
     }
 
-    public static BankNumber fromCbu(String cbu) {
-        if (cbu == null || cbu.length() < 3) {
-            throw new InvalidBankNumberException(cbu);
-        }
-        return new BankNumber(cbu.substring(0, 3));
-    }
-
     @Override
     public String toString() {
         return value;

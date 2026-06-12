@@ -92,8 +92,8 @@ public class HoldingWebMapper {
     public AccountValuationResponse toValuationResponse(AccountValuationResult result) {
         return AccountValuationResponse.builder()
                 .bankNumber(result.bankNumber().value())
-                .totalValuation(toPlain(result.totalValuation()))
-                .currency(result.currency())
+                .totalValuation(toPlain(result.totalValuation().amount()))
+                .currency(result.totalValuation().currency().getCurrencyCode())
                 .build();
     }
 }

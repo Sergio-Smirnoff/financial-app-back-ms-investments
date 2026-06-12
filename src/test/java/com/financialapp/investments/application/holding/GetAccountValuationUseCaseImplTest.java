@@ -42,8 +42,8 @@ class GetAccountValuationUseCaseImplTest {
     void execute_noHoldings_returnsZero() {
         when(holdingQueryGateway.findByUserIdAndBankNumberAndCurrency(USER, BANK, ARS)).thenReturn(List.of());
         AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(USER, BANK, ARS));
-        assertThat(r.totalValuation()).isEqualByComparingTo("0");
-        assertThat(r.currency()).isEqualTo("ARS");
+        assertThat(r.totalValuation().amount()).isEqualByComparingTo("0");
+        assertThat(r.totalValuation().currency().getCurrencyCode()).isEqualTo("ARS");
         assertThat(r.holdingCount()).isZero();
         assertThat(r.bankNumber()).isEqualTo(BANK);
     }
@@ -60,8 +60,8 @@ class GetAccountValuationUseCaseImplTest {
         AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(USER, BANK, ARS));
 
         // AAPL: 200 * 2 = 400, GOOG fallback to avg 50 * 3 = 150 → 550
-        assertThat(r.totalValuation()).isEqualByComparingTo("550");
-        assertThat(r.currency()).isEqualTo("ARS");
+        assertThat(r.totalValuation().amount()).isEqualByComparingTo("550");
+        assertThat(r.totalValuation().currency().getCurrencyCode()).isEqualTo("ARS");
         assertThat(r.holdingCount()).isEqualTo(2L);
         assertThat(r.bankNumber()).isEqualTo(BANK);
     }
