@@ -1,5 +1,6 @@
 package com.financialapp.investments.web.mapper;
 
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 
 import com.financialapp.investments.domain.common.model.Money;
@@ -34,8 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WebMappersTest {
 
     private static final UserId USER = new UserId(1L);
+    private static final BankNumber BANK = new BankNumber("007");
     private static final Cbu ACC = new Cbu("0070009000000000000099");
-    private static final Cbu BANK = new Cbu("0070009000000000000017");
     private static final Ticker TIC = new Ticker("AAPL");
     private static final Money PRICE = Money.of(new BigDecimal("100.00"), "ARS");
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 1, 0, 0);
@@ -44,8 +45,8 @@ class WebMappersTest {
     private final PortfolioWebMapper portfolioMapper = new PortfolioWebMapper();
 
     private Holding holdingWith(HoldingId id, ThresholdConfig tc, NotificationTimestamps ts,
-                                Cbu bank, Cbu acc) {
-        return new Holding(id, USER, acc, TIC, "Apple", AssetType.STOCK,
+                                BankNumber bank, Cbu acc) {
+        return new Holding(id, USER, bank, TIC, "Apple", AssetType.STOCK,
                 new HoldingQuantity(new BigDecimal("1.000000")), PRICE, tc, ts, NOW, NOW);
     }
 
@@ -61,7 +62,7 @@ class WebMappersTest {
         assertThat(r.getUserId()).isEqualTo(1L);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isEqualTo("ARS");
-        assertThat(r.getAccountCbu()).isEqualTo("0070009000000000000099");
+        assertThat(r.getBankNumber()).isEqualTo("007");
         assertThat(r.getQuantity()).isEqualTo("1.000000");
         assertThat(r.getAvgPurchasePrice()).isEqualTo("100.00");
         assertThat(r.getNotifyGainThresholdPct()).isEqualTo("10.50");
@@ -74,7 +75,7 @@ class WebMappersTest {
         Holding h = holdingWith(null, null, NotificationTimestamps.empty(), null, null);
         HoldingResponse r = holdingMapper.toResponse(h);
         assertThat(r.getId()).isNull();
-        assertThat(r.getAccountCbu()).isNull();
+        assertThat(r.getBankNumber()).isNull();
         assertThat(r.getNotifyGainThresholdPct()).isNull();
         assertThat(r.getNotifyLossThresholdPct()).isNull();
     }
@@ -120,23 +121,24 @@ class WebMappersTest {
         HoldingDetailResponse r2 = holdingMapper.toDetailResponse(
                 new HoldingWithPriceResult(h2, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO));
         assertThat(r2.getNotifyGainThresholdPct()).isNull();
-        assertThat(r2.getAccountCbu()).isNull();
+        assertThat(r2.getBankNumber()).isNull();
     }
 
     @Test
     void holdingMapper_toValuationResponse() {
-        AccountValuationResult r = new AccountValuationResult(ACC, new BigDecimal("500.00"), "USD", 3L);
+        AccountValuationResult r = new AccountValuationResult(BANK, Money.of(new BigDecimal("500.00"), "USD"), 3L);
         AccountValuationResponse resp = holdingMapper.toValuationResponse(r);
-        assertThat(resp.getAccountCbu()).isEqualTo("0070009000000000000099");
+        assertThat(resp.getBankNumber()).isEqualTo("007");
         assertThat(resp.getTotalValuation()).isEqualTo("500.00");
         assertThat(resp.getCurrency()).isEqualTo("USD");
     }
 
     @Test
-    void holdingMapper_toValuationResponse_nullTotal_remainsNull() {
-        AccountValuationResult r = new AccountValuationResult(ACC, null, "USD", 0L);
+    void holdingMapper_toValuationResponse_zeroTotal() {
+        AccountValuationResult r = new AccountValuationResult(BANK, Money.zero("USD"), 0L);
         AccountValuationResponse resp = holdingMapper.toValuationResponse(r);
-        assertThat(resp.getTotalValuation()).isNull();
+        assertThat(resp.getTotalValuation()).isEqualTo("0");
+        assertThat(resp.getCurrency()).isEqualTo("USD");
     }
 
     // -------- PortfolioWebMapper --------

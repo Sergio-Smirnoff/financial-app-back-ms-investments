@@ -23,8 +23,8 @@ public class HoldingJpaEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "account_cbu", length = 22)
-    private String accountCbu;
+    @Column(name = "bank_number", nullable = false, length = 3)
+    private String bankNumber;
 
     @Column(nullable = false, length = 20)
     private String ticker;

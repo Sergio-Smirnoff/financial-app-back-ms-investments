@@ -1,6 +1,6 @@
 package com.financialapp.investments.infrastructure.persistence.mapper;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.financialapp.investments.domain.common.model.Money;
@@ -39,7 +39,7 @@ class PersistenceMappersTest {
     void holdingMapper_roundTrip() {
         HoldingPersistenceMapper m = new HoldingPersistenceMapper();
         Holding original = new Holding(new HoldingId(1L), new UserId(7L),
-                new Cbu("0070009000000000000017"), new Ticker("AAPL"),
+                new BankNumber("007"), new Ticker("AAPL"),
                 "Apple", AssetType.STOCK, new HoldingQuantity(BigDecimal.ONE),
                 Money.of(new BigDecimal("100"), "ARS"),
                 new ThresholdConfig(BigDecimal.ONE, BigDecimal.ONE),
@@ -47,11 +47,11 @@ class PersistenceMappersTest {
 
         HoldingJpaEntity entity = m.toEntity(original);
         assertThat(entity.getCurrency()).isEqualTo("ARS");
-        assertThat(entity.getAccountCbu()).isEqualTo("0070009000000000000017");
+        assertThat(entity.getBankNumber()).isEqualTo("007");
 
         Holding back = m.toDomain(entity);
         assertThat(back.id().value()).isEqualTo(1L);
-        assertThat(back.accountCbu().value()).isEqualTo("0070009000000000000017");
+        assertThat(back.bankNumber().value()).isEqualTo("007");
         assertThat(back.avgPurchasePrice().currency().getCurrencyCode()).isEqualTo("ARS");
         assertThat(back.thresholdConfig().gainPct()).isEqualByComparingTo("1");
         assertThat(back.notificationTimestamps().lastGainNotifiedAt()).isEqualTo(NOW);
@@ -66,10 +66,10 @@ class PersistenceMappersTest {
                 NotificationTimestamps.empty(), NOW, NOW);
         HoldingJpaEntity entity = m.toEntity(original);
         assertThat(entity.getId()).isNull();
-        assertThat(entity.getAccountCbu()).isNull();
+        assertThat(entity.getBankNumber()).isNull();
         assertThat(entity.getNotifyGainThresholdPct()).isNull();
         Holding back = m.toDomain(entity);
-        assertThat(back.accountCbu()).isNull();
+        assertThat(back.bankNumber()).isNull();
     }
 
     // -------- AssetPrice --------

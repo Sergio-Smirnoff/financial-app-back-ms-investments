@@ -21,9 +21,7 @@ public interface HoldingJpaRepository extends JpaRepository<HoldingJpaEntity, Lo
 
     Optional<HoldingJpaEntity> findByIdAndUserId(Long id, Long userId);
 
-    List<HoldingJpaEntity> findByAccountCbu(String accountCbu);
-
-    long countByAccountCbu(String accountCbu);
+    List<HoldingJpaEntity> findByUserIdAndBankNumberAndCurrency(Long userId, String bankNumber, String currency);
 
     Optional<HoldingJpaEntity> findFirstByTicker(String ticker);
 

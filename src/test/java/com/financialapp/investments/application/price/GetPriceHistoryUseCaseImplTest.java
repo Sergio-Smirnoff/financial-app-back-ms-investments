@@ -1,6 +1,6 @@
 package com.financialapp.investments.application.price;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 
 import com.financialapp.investments.application.price.impl.GetPriceHistoryUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
@@ -107,7 +107,7 @@ class GetPriceHistoryUseCaseImplTest {
     }
 
     private static Holding holdingWithType(AssetType type) {
-        return new Holding(new HoldingId(1L), new UserId(1L), new Cbu("0070009000000000000017"),
+        return new Holding(new HoldingId(1L), new UserId(1L), new BankNumber("007"),
                 TIC, "n", type, new HoldingQuantity(BigDecimal.ONE),
                 Money.of(BigDecimal.ONE, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

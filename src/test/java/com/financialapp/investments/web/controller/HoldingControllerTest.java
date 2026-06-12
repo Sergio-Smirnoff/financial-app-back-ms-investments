@@ -1,6 +1,6 @@
 package com.financialapp.investments.web.controller;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.financialapp.investments.domain.usecase.holding.command.CreateHoldingCommand;
@@ -168,7 +168,7 @@ class HoldingControllerTest {
         return new Holding(
                 new HoldingId(1L),
                 new UserId(USER_ID),
-                new Cbu("0070009000000000000017"),
+                new BankNumber("007"),
                 new Ticker("AAPL"),
                 "Apple Inc",
                 AssetType.STOCK,
@@ -180,7 +180,7 @@ class HoldingControllerTest {
 
     private HoldingRequest validRequest() {
         HoldingRequest req = new HoldingRequest();
-        req.setAccountCbu("0070009000000000000017");
+        req.setBankNumber("007");
         req.setTicker("AAPL");
         req.setName("Apple Inc");
         req.setAssetType("STOCK");

@@ -1,6 +1,6 @@
 package com.financialapp.investments.infrastructure.persistence.repository;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.PageRequest;
 import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -12,6 +12,7 @@ import com.financialapp.investments.infrastructure.persistence.mapper.HoldingPer
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
 
@@ -88,13 +89,9 @@ public class HoldingRepositoryImpl implements HoldingRepository, HoldingQueryGat
     }
 
     @Override
-    public List<Holding> findByAccountCbu(Cbu accountCbu) {
-        return jpaRepository.findByAccountCbu(accountCbu.value())
+    public List<Holding> findByUserIdAndBankNumberAndCurrency(UserId userId, BankNumber bankNumber, Currency currency) {
+        return jpaRepository.findByUserIdAndBankNumberAndCurrency(
+                        userId.value(), bankNumber.value(), currency.getCurrencyCode())
                 .stream().map(mapper::toDomain).toList();
-    }
-
-    @Override
-    public long countByAccountCbu(Cbu accountCbu) {
-        return jpaRepository.countByAccountCbu(accountCbu.value());
     }
 }

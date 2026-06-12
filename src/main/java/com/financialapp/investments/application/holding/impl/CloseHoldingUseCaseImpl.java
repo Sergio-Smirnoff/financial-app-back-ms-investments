@@ -47,7 +47,7 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
 
         eventPublisher.publish(new HoldingClosedEvent(
                 holding.id(), holding.userId(), holding.ticker(),
-                holding.accountCbu(), command.destinationCbu(),
+                holding.bankNumber(), command.destinationCbu(),
                 proceeds, LocalDateTime.now()
         ));
     }
