@@ -10,7 +10,10 @@ import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.market.command.GetTickerResearchCommand;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,10 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class GetTickerResearchUseCaseImplTest {
 
-    private final IolGateway iolGateway = Mockito.mock(IolGateway.class);
-    private final GetTickerResearchUseCaseImpl useCase = new GetTickerResearchUseCaseImpl(iolGateway);
+    @Mock private IolGateway iolGateway;
+    @InjectMocks private GetTickerResearchUseCaseImpl useCase;
 
     @Test
     void returns_quote_and_series() {
