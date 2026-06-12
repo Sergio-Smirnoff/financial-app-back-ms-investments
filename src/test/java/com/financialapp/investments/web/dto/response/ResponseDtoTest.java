@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.financialapp.investments.web.dto.response.TickerSearchResponse;
+import com.financialapp.investments.web.dto.response.TickerResearchResponse;
 
 class ResponseDtoTest {
 
@@ -67,6 +69,32 @@ class ResponseDtoTest {
                 .pricedAt(LocalDateTime.now()).build();
         assertThat(ph.getTicker()).isEqualTo("X");
         assertThat(ph.getLastPrice()).isEqualTo("1.00");
+    }
+
+    @Test
+    void tickerSearchResponse_buildAndExpose() {
+        TickerSearchResponse r = TickerSearchResponse.builder()
+                .ticker("YPFD").price("1200.50").currency("ARS").variation("2.10").build();
+        assertThat(r.getTicker()).isEqualTo("YPFD");
+        assertThat(r.getPrice()).isEqualTo("1200.50");
+        assertThat(r.getCurrency()).isEqualTo("ARS");
+        assertThat(r.getVariation()).isEqualTo("2.10");
+    }
+
+    @Test
+    void tickerResearchResponse_buildAndExpose() {
+        TickerResearchResponse.Point p = TickerResearchResponse.Point.builder()
+                .date("2026-01-01").price("100.00").build();
+        TickerResearchResponse r = TickerResearchResponse.builder()
+                .ticker("YPFD").currency("ARS").currentPrice("1200.50")
+                .variation("2.10").series(List.of(p)).build();
+        assertThat(r.getTicker()).isEqualTo("YPFD");
+        assertThat(r.getCurrency()).isEqualTo("ARS");
+        assertThat(r.getCurrentPrice()).isEqualTo("1200.50");
+        assertThat(r.getVariation()).isEqualTo("2.10");
+        assertThat(r.getSeries()).hasSize(1);
+        assertThat(r.getSeries().get(0).getDate()).isEqualTo("2026-01-01");
+        assertThat(r.getSeries().get(0).getPrice()).isEqualTo("100.00");
     }
 
     @Test
