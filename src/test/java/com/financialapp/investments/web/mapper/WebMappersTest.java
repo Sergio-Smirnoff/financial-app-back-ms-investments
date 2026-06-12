@@ -8,7 +8,7 @@ import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.history.AssetPriceHistory;
 import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
 import com.financialapp.investments.domain.model.holding.*;
-import com.financialapp.investments.domain.model.market.MarketQuote;
+import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
@@ -237,8 +237,8 @@ class WebMappersTest {
 
     @Test
     void marketMapper_toSearchResponse_passesAllFields() {
-        MarketQuote q = new MarketQuote(TIC, PRICE, new BigDecimal("2.50"), new BigDecimal("500"), NOW);
-        TickerSearchResponse r = new MarketWebMapper().toSearchResponse(q);
+        TickerSearchResult result = new TickerSearchResult(TIC, PRICE, new BigDecimal("2.50"));
+        TickerSearchResponse r = new MarketWebMapper().toSearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getPrice()).isEqualTo("100.00");
         assertThat(r.getCurrency()).isEqualTo("ARS");
@@ -247,8 +247,8 @@ class WebMappersTest {
 
     @Test
     void marketMapper_toSearchResponse_nullVariation_serialisedAsNull() {
-        MarketQuote q = new MarketQuote(TIC, PRICE, null, null, NOW);
-        TickerSearchResponse r = new MarketWebMapper().toSearchResponse(q);
+        TickerSearchResult result = new TickerSearchResult(TIC, PRICE, null);
+        TickerSearchResponse r = new MarketWebMapper().toSearchResponse(result);
         assertThat(r.getVariation()).isNull();
     }
 

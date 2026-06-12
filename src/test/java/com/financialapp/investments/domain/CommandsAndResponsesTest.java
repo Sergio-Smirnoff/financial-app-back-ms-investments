@@ -26,6 +26,7 @@ import com.financialapp.investments.domain.usecase.market.command.GetMarketDisco
 import com.financialapp.investments.domain.usecase.market.command.GetTickerResearchCommand;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
+import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetHoldingsWithPricesCommand;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioEvolutionCommand;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioSummaryCommand;
@@ -156,6 +157,22 @@ class CommandsAndResponsesTest {
         MarketOpportunityResult r = new MarketOpportunityResult(TIC, ARS, BigDecimal.ONE, BigDecimal.TEN);
         assertThat(r.ticker()).isEqualTo(TIC);
         assertThat(r.price()).isEqualTo(ARS);
+    }
+
+    @Test
+    void tickerSearchResult_accessors_and_nullGuards() {
+        TickerSearchResult r = new TickerSearchResult(TIC, ARS, new BigDecimal("1.50"));
+        assertThat(r.ticker()).isEqualTo(TIC);
+        assertThat(r.price()).isEqualTo(ARS);
+        assertThat(r.variation()).isEqualByComparingTo("1.50");
+
+        TickerSearchResult noVariation = new TickerSearchResult(TIC, ARS, null);
+        assertThat(noVariation.variation()).isNull();
+
+        assertThatThrownBy(() -> new TickerSearchResult(null, ARS, null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new TickerSearchResult(TIC, null, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
