@@ -1,6 +1,7 @@
 package com.financialapp.investments.web.mapper;
 
 import com.financialapp.investments.domain.model.market.MarketQuote;
+import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
@@ -35,7 +36,7 @@ public class MarketWebMapper {
     public TickerResearchResponse toResearchResponse(TickerResearchResult research) {
         return TickerResearchResponse.builder()
                 .ticker(research.ticker().value())
-                .currency(research.currentQuote().map(quote -> quote.currency()).orElse(null))
+                .currency(research.currentQuote().map(PriceDetail::currency).orElse(null))
                 .currentPrice(research.currentQuote().map(quote -> toPlain(quote.lastPrice())).orElse(null))
                 .variation(research.currentQuote().map(quote -> toPlain(quote.dailyVariation())).orElse(null))
                 .series(research.series().stream()

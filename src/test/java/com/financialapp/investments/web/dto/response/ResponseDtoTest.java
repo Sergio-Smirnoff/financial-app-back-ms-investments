@@ -1,6 +1,8 @@
 package com.financialapp.investments.web.dto.response;
 
 import com.financialapp.investments.domain.exception.InfrastructureException;
+import com.financialapp.investments.web.dto.response.TickerResearchResponse;
+import com.financialapp.investments.web.dto.response.TickerSearchResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -8,8 +10,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import com.financialapp.investments.web.dto.response.TickerSearchResponse;
-import com.financialapp.investments.web.dto.response.TickerResearchResponse;
 
 class ResponseDtoTest {
 

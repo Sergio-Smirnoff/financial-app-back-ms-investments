@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -262,7 +263,7 @@ class WebMappersTest {
                 new BigDecimal("150.00"), new BigDecimal("143.00"),
                 new BigDecimal("900"), new BigDecimal("2.00"), "USD",
                 NOW.minusDays(1));
-        TickerResearchResult result = new TickerResearchResult(TIC, java.util.Optional.of(detail), java.util.List.of(point));
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(detail), List.of(point));
         TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isEqualTo("USD");
@@ -275,7 +276,7 @@ class WebMappersTest {
 
     @Test
     void marketMapper_toResearchResponse_emptyQuote_nullsCurrentPriceFields() {
-        TickerResearchResult result = new TickerResearchResult(TIC, java.util.Optional.empty(), java.util.List.of());
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.empty(), List.of());
         TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isNull();
