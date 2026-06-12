@@ -12,9 +12,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class HoldingRequest {
 
-    @NotBlank(message = "Account CBU is required")
-    @Pattern(regexp = "\\d{22}", message = "accountCbu must be exactly 22 digits")
-    private String accountCbu;
+    @NotBlank(message = "Bank number is required")
+    @Pattern(regexp = "\\d{3}", message = "bankNumber must be exactly 3 digits")
+    private String bankNumber;
 
     @Pattern(regexp = "\\d{22}", message = "fundingCbu must be exactly 22 digits")
     private String fundingCbu;

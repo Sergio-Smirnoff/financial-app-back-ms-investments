@@ -1,11 +1,9 @@
 package com.financialapp.investments.application.holding;
 
-import com.financialapp.investments.domain.common.model.Cbu;
-
 import com.financialapp.investments.application.holding.impl.GetAccountValuationUseCaseImpl;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
-import com.financialapp.investments.domain.exception.ResourceConflictException;
 import com.financialapp.investments.domain.gateway.HoldingQueryGateway;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetPrice;
@@ -22,10 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Currency;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -36,45 +34,40 @@ class GetAccountValuationUseCaseImplTest {
     @Mock private AssetPriceRepository assetPriceRepository;
     @InjectMocks private GetAccountValuationUseCaseImpl useCase;
 
-    private static final Cbu ACC = new Cbu("0070009000000000000099");
+    private static final UserId USER = new UserId(1L);
+    private static final BankNumber BANK = new BankNumber("007");
+    private static final Currency ARS = Currency.getInstance("ARS");
 
     @Test
-    void execute_noHoldings_returnsZero_ARS() {
-        when(holdingQueryGateway.findByAccountCbu(ACC)).thenReturn(List.of());
-        AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(ACC));
+    void execute_noHoldings_returnsZero() {
+        when(holdingQueryGateway.findByUserIdAndBankNumberAndCurrency(USER, BANK, ARS)).thenReturn(List.of());
+        AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(USER, BANK, ARS));
         assertThat(r.totalValuation()).isEqualByComparingTo("0");
         assertThat(r.currency()).isEqualTo("ARS");
         assertThat(r.holdingCount()).isZero();
+        assertThat(r.bankNumber()).isEqualTo(BANK);
     }
 
     @Test
-    void execute_singleCurrency_computesValuation_usingMarketPrice() {
+    void execute_computesValuation_usingMarketPrice() {
         Holding h1 = holding("AAPL", new BigDecimal("2"), new BigDecimal("100"), "ARS");
         Holding h2 = holding("GOOG", new BigDecimal("3"), new BigDecimal("50"), "ARS");
-        when(holdingQueryGateway.findByAccountCbu(ACC)).thenReturn(List.of(h1, h2));
+        when(holdingQueryGateway.findByUserIdAndBankNumberAndCurrency(USER, BANK, ARS))
+                .thenReturn(List.of(h1, h2));
         when(assetPriceRepository.findAllByTickerIn(any())).thenReturn(List.of(
                 assetPrice("AAPL", new BigDecimal("200"))));
 
-        AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(ACC));
+        AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(USER, BANK, ARS));
 
         // AAPL: 200 * 2 = 400, GOOG fallback to avg 50 * 3 = 150 → 550
         assertThat(r.totalValuation()).isEqualByComparingTo("550");
         assertThat(r.currency()).isEqualTo("ARS");
         assertThat(r.holdingCount()).isEqualTo(2L);
-    }
-
-    @Test
-    void execute_mixedCurrency_throwsResourceConflict() {
-        Holding ars = holding("AAPL", BigDecimal.ONE, BigDecimal.TEN, "ARS");
-        Holding usd = holding("GOOG", BigDecimal.ONE, BigDecimal.TEN, "USD");
-        when(holdingQueryGateway.findByAccountCbu(ACC)).thenReturn(List.of(ars, usd));
-
-        assertThatThrownBy(() -> useCase.execute(new GetAccountValuationCommand(ACC)))
-                .isInstanceOf(ResourceConflictException.class);
+        assertThat(r.bankNumber()).isEqualTo(BANK);
     }
 
     private static Holding holding(String ticker, BigDecimal qty, BigDecimal price, String ccy) {
-        return new Holding(new HoldingId(1L), new UserId(1L), ACC,
+        return new Holding(new HoldingId(1L), USER, BANK,
                 new Ticker(ticker), "n", AssetType.STOCK,
                 new HoldingQuantity(qty), Money.of(price, ccy),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

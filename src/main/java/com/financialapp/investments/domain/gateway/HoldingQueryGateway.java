@@ -1,10 +1,11 @@
 package com.financialapp.investments.domain.gateway;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.Ticker;
 
+import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,5 @@ public interface HoldingQueryGateway {
 
     Optional<Holding> findFirstByTicker(Ticker ticker);
 
-    List<Holding> findByAccountCbu(Cbu accountCbu);
-
-    long countByAccountCbu(Cbu accountCbu);
+    List<Holding> findByUserIdAndBankNumberAndCurrency(UserId userId, BankNumber bankNumber, Currency currency);
 }

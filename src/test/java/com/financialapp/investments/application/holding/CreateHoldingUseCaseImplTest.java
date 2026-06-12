@@ -1,6 +1,7 @@
 package com.financialapp.investments.application.holding;
 
 import com.financialapp.investments.application.holding.impl.CreateHoldingUseCaseImpl;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -45,7 +46,7 @@ class CreateHoldingUseCaseImplTest {
     private CreateHoldingUseCaseImpl useCase;
 
     private static final UserId USER_ID = new UserId(1L);
-    private static final Cbu ACCOUNT_CBU = new Cbu("0070009000000000000017");
+    private static final BankNumber ACCOUNT_CBU = new BankNumber("007");
     private static final Cbu FUNDING_CBU = new Cbu("0070009000000000000099");
 
     @Test
@@ -110,7 +111,7 @@ class CreateHoldingUseCaseImplTest {
     }
 
     private static Holding withId(Holding h, long id) {
-        return new Holding(new HoldingId(id), h.userId(), h.accountCbu(),
+        return new Holding(new HoldingId(id), h.userId(), h.bankNumber(),
                 h.ticker(), h.name(), h.assetType(), h.quantity(), h.avgPurchasePrice(),
                 h.thresholdConfig(), h.notificationTimestamps(), h.createdAt(), h.updatedAt());
     }

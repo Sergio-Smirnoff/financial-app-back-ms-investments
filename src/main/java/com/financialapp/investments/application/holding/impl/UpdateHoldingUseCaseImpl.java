@@ -46,7 +46,7 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
         Holding updated = new Holding(
                 existing.id(),
                 existing.userId(),
-                command.accountCbu(),
+                command.bankNumber(),
                 existing.ticker(),
                 command.name(),
                 existing.assetType(),
@@ -62,7 +62,7 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
 
         eventPublisher.publish(new HoldingUpdatedEvent(
                 saved.id(), saved.userId(), saved.ticker(),
-                saved.accountCbu(), command.fundingCbu(),
+                saved.bankNumber(), command.fundingCbu(),
                 saved.quantity(), existing.quantity(),
                 saved.avgPurchasePrice(), costDifference,
                 LocalDateTime.now()

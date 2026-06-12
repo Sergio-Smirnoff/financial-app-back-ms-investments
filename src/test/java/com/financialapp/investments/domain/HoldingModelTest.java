@@ -1,6 +1,6 @@
 package com.financialapp.investments.domain;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.Holding;
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class HoldingModelTest {
 
     private static final UserId USER = new UserId(1L);
-    private static final Cbu ACC = new Cbu("0070009000000000000010");
+    private static final BankNumber ACC = new BankNumber("007");
     private static final Ticker TIC = new Ticker("AAPL");
     private static final HoldingQuantity QTY = new HoldingQuantity(BigDecimal.ONE);
     private static final Money PRICE = Money.of(new BigDecimal("100"), "ARS");

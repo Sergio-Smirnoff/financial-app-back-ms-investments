@@ -1,6 +1,5 @@
 package com.financialapp.investments.application.holding.impl;
 
-import com.financialapp.investments.domain.exception.ResourceConflictException;
 import com.financialapp.investments.domain.gateway.HoldingQueryGateway;
 import com.financialapp.investments.domain.usecase.holding.command.GetAccountValuationCommand;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
@@ -29,40 +28,23 @@ public class GetAccountValuationUseCaseImpl implements GetAccountValuationUseCas
 
     @Override
     public AccountValuationResult execute(GetAccountValuationCommand command) {
-        List<Holding> holdings = holdingQueryGateway.findByAccountCbu(command.accountCbu());
+        String currencyCode = command.currency().getCurrencyCode();
+        List<Holding> holdings = holdingQueryGateway.findByUserIdAndBankNumberAndCurrency(
+                command.userId(), command.bankNumber(), command.currency());
 
         if (holdings.isEmpty()) {
-            return new AccountValuationResult(command.accountCbu(), BigDecimal.ZERO, "ARS", 0);
+            return new AccountValuationResult(command.bankNumber(), BigDecimal.ZERO, currencyCode, 0);
         }
 
-        long distinctCurrencies = holdings.stream()
-                .map(h -> h.avgPurchasePrice().currency().getCurrencyCode())
-                .distinct()
-                .count();
-        if (distinctCurrencies > 1) {
-            throw new ResourceConflictException(
-                    "Account " + command.accountCbu().value()
-                            + " holds assets in multiple currencies; use portfolio summary instead.");
-        }
-
-        Set<Ticker> tickers = holdings.stream()
-                .map(Holding::ticker)
-                .collect(Collectors.toSet());
-
-        Map<Ticker, BigDecimal> priceMap = assetPriceRepository.findAllByTickerIn(tickers)
-                .stream()
+        Set<Ticker> tickers = holdings.stream().map(Holding::ticker).collect(Collectors.toSet());
+        Map<Ticker, BigDecimal> priceMap = assetPriceRepository.findAllByTickerIn(tickers).stream()
                 .collect(Collectors.toMap(AssetPrice::ticker, AssetPrice::lastPrice, (a, b) -> b));
 
         BigDecimal totalValuation = holdings.stream()
-                .map(h -> {
-                    BigDecimal price = priceMap.getOrDefault(
-                            h.ticker(), h.avgPurchasePrice().amount());
-                    return price.multiply(h.quantity().value());
-                })
+                .map(h -> priceMap.getOrDefault(h.ticker(), h.avgPurchasePrice().amount())
+                        .multiply(h.quantity().value()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        String currency = holdings.getFirst().avgPurchasePrice().currency().getCurrencyCode();
-
-        return new AccountValuationResult(command.accountCbu(), totalValuation, currency, holdings.size());
+        return new AccountValuationResult(command.bankNumber(), totalValuation, currencyCode, holdings.size());
     }
 }

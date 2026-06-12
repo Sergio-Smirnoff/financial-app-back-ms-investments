@@ -1,11 +1,11 @@
 package com.financialapp.investments.domain.usecase.holding.response;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 
 import java.math.BigDecimal;
 
 public record AccountValuationResult(
-        Cbu accountCbu,
+        BankNumber bankNumber,
         BigDecimal totalValuation,
         String currency,
         long holdingCount

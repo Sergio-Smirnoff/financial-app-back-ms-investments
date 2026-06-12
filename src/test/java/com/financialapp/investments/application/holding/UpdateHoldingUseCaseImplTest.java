@@ -1,6 +1,7 @@
 package com.financialapp.investments.application.holding;
 
 import com.financialapp.investments.application.holding.impl.UpdateHoldingUseCaseImpl;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -44,7 +45,7 @@ class UpdateHoldingUseCaseImplTest {
 
     private static final UserId USER = new UserId(1L);
     private static final HoldingId HID = new HoldingId(42L);
-    private static final Cbu ACC = new Cbu("0070009000000000000017");
+    private static final BankNumber ACC = new BankNumber("007");
     private static final Cbu FUNDING = new Cbu("0070009000000000000099");
     private static final Ticker TIC = new Ticker("AAPL");
 

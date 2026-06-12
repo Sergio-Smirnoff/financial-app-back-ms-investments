@@ -3,6 +3,7 @@ package com.financialapp.investments.web.controller;
 import com.financialapp.investments.domain.usecase.holding.command.*;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
 import com.financialapp.investments.domain.usecase.holding.*;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.PageRequest;
@@ -10,6 +11,8 @@ import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
+
+import java.util.Currency;
 import com.financialapp.commons.core.response.ApiResponse;
 import com.financialapp.commons.web.openapi.ApiErrorCodes;
 import com.financialapp.investments.domain.exception.DomainError;
@@ -61,20 +64,15 @@ public class HoldingController {
     }
 
     @GetMapping("/valuation")
-    @Operation(summary = "Get total valuation for holdings linked to a bank account")
+    @Operation(summary = "Get total valuation for a user's holdings in a bank+currency")
     public ResponseEntity<ApiResponse<AccountValuationResponse>> getAccountValuation(
-            @RequestParam String accountCbu) {
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam String bankNumber,
+            @RequestParam String currency) {
         AccountValuationResult result = getAccountValuationUseCase.execute(
-                new GetAccountValuationCommand(new Cbu(accountCbu)));
+                new GetAccountValuationCommand(new UserId(userId), new BankNumber(bankNumber),
+                        Currency.getInstance(currency)));
         return ResponseEntity.ok(ApiResponse.ok(holdingWebMapper.toValuationResponse(result)));
-    }
-
-    @GetMapping("/count")
-    @Operation(summary = "Count holdings linked to a bank account")
-    public ResponseEntity<ApiResponse<Long>> countHoldings(@RequestParam String accountCbu) {
-        AccountValuationResult result = getAccountValuationUseCase.execute(
-                new GetAccountValuationCommand(new Cbu(accountCbu)));
-        return ResponseEntity.ok(ApiResponse.ok(result.holdingCount()));
     }
 
     @PostMapping
@@ -116,7 +114,7 @@ public class HoldingController {
     private CreateHoldingCommand toCreateCommand(Long userId, HoldingRequest req) {
         return new CreateHoldingCommand(
                 new UserId(userId),
-                new Cbu(req.getAccountCbu()),
+                new BankNumber(req.getBankNumber()),
                 new Ticker(req.getTicker()),
                 req.getName(),
                 AssetType.valueOf(req.getAssetType()),
@@ -131,7 +129,7 @@ public class HoldingController {
         return new UpdateHoldingCommand(
                 new UserId(userId),
                 new HoldingId(id),
-                new Cbu(req.getAccountCbu()),
+                new BankNumber(req.getBankNumber()),
                 new Ticker(req.getTicker()),
                 req.getName(),
                 AssetType.valueOf(req.getAssetType()),

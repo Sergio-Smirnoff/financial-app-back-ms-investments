@@ -21,7 +21,7 @@ public class HoldingWebMapper {
         return HoldingResponse.builder()
                 .id(holding.id() != null ? holding.id().value() : null)
                 .userId(holding.userId().value())
-                .accountCbu(holding.accountCbu() != null ? holding.accountCbu().value() : null)
+                .bankNumber(holding.bankNumber() != null ? holding.bankNumber().value() : null)
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
@@ -42,7 +42,7 @@ public class HoldingWebMapper {
         return HoldingWithPriceResponse.builder()
                 .id(holding.id() != null ? holding.id().value() : null)
                 .userId(holding.userId().value())
-                .accountCbu(holding.accountCbu() != null ? holding.accountCbu().value() : null)
+                .bankNumber(holding.bankNumber() != null ? holding.bankNumber().value() : null)
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
@@ -69,7 +69,7 @@ public class HoldingWebMapper {
         return HoldingDetailResponse.builder()
                 .id(holding.id() != null ? holding.id().value() : null)
                 .userId(holding.userId().value())
-                .accountCbu(holding.accountCbu() != null ? holding.accountCbu().value() : null)
+                .bankNumber(holding.bankNumber() != null ? holding.bankNumber().value() : null)
                 .ticker(holding.ticker().value())
                 .name(holding.name())
                 .assetType(holding.assetType().name())
@@ -91,7 +91,7 @@ public class HoldingWebMapper {
 
     public AccountValuationResponse toValuationResponse(AccountValuationResult result) {
         return AccountValuationResponse.builder()
-                .accountCbu(result.accountCbu().value())
+                .bankNumber(result.bankNumber().value())
                 .totalValuation(toPlain(result.totalValuation()))
                 .currency(result.currency())
                 .build();
