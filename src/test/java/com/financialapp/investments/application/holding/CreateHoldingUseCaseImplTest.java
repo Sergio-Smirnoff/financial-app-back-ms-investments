@@ -46,7 +46,7 @@ class CreateHoldingUseCaseImplTest {
     private CreateHoldingUseCaseImpl useCase;
 
     private static final UserId USER_ID = new UserId(1L);
-    private static final BankNumber ACCOUNT_CBU = new BankNumber("007");
+    private static final BankNumber BANK_NUMBER = new BankNumber("007");
     private static final Cbu FUNDING_CBU = new Cbu("0070009000000000000099");
 
     @Test
@@ -103,7 +103,7 @@ class CreateHoldingUseCaseImplTest {
 
     private static CreateHoldingCommand createCommand(Cbu fundingCbu) {
         return new CreateHoldingCommand(
-                USER_ID, ACCOUNT_CBU,
+                USER_ID, BANK_NUMBER,
                 new Ticker("AAPL"), "Apple Inc", AssetType.STOCK,
                 new HoldingQuantity(new BigDecimal("10")),
                 Money.of(new BigDecimal("150"), "ARS"),

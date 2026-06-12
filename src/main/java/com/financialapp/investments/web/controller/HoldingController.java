@@ -12,7 +12,6 @@ import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
 
-import java.util.Currency;
 import com.financialapp.commons.core.response.ApiResponse;
 import com.financialapp.commons.web.openapi.ApiErrorCodes;
 import com.financialapp.investments.domain.exception.DomainError;
@@ -32,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Currency;
 import java.util.List;
 
 @RestController
