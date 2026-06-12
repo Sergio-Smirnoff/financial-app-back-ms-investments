@@ -32,4 +32,10 @@ public class MarketQuoteRepositoryImpl implements MarketQuoteRepository {
     public Optional<MarketQuote> findByTicker(Ticker ticker) {
         return jpaRepository.findByTicker(ticker.value()).map(mapper::toDomain);
     }
+
+    @Override
+    public List<MarketQuote> search(String query) {
+        return jpaRepository.findByTickerContainingIgnoreCaseOrderByVolumeDesc(query)
+                .stream().map(mapper::toDomain).toList();
+    }
 }
