@@ -1,9 +1,9 @@
 package com.financialapp.investments.web.mapper;
 
-import com.financialapp.investments.domain.model.market.MarketQuote;
 import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
+import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
 import com.financialapp.investments.web.dto.response.TickerResearchResponse;
 import com.financialapp.investments.web.dto.response.TickerSearchResponse;
@@ -24,12 +24,12 @@ public class MarketWebMapper {
                 .build();
     }
 
-    public TickerSearchResponse toSearchResponse(MarketQuote quote) {
+    public TickerSearchResponse toSearchResponse(TickerSearchResult result) {
         return TickerSearchResponse.builder()
-                .ticker(quote.ticker().value())
-                .price(toPlain(quote.price().amount()))
-                .currency(quote.price().currency().getCurrencyCode())
-                .variation(toPlain(quote.variation()))
+                .ticker(result.ticker().value())
+                .price(toPlain(result.price().amount()))
+                .currency(result.price().currency().getCurrencyCode())
+                .variation(toPlain(result.variation()))
                 .build();
     }
 

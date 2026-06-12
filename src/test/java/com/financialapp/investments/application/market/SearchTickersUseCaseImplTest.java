@@ -5,6 +5,7 @@ import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.model.holding.Ticker;
 import com.financialapp.investments.domain.model.market.MarketQuote;
 import com.financialapp.investments.domain.repository.MarketQuoteRepository;
+import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,7 +30,7 @@ class SearchTickersUseCaseImplTest {
 
     @Test
     void blank_query_returns_empty_list_without_calling_repository() {
-        List<MarketQuote> result = useCase.execute("   ");
+        List<TickerSearchResult> result = useCase.execute("   ");
 
         assertThat(result).isEmpty();
         verify(marketQuoteRepository, never()).search(anyString());
@@ -37,7 +38,7 @@ class SearchTickersUseCaseImplTest {
 
     @Test
     void null_query_returns_empty_list_without_calling_repository() {
-        List<MarketQuote> result = useCase.execute(null);
+        List<TickerSearchResult> result = useCase.execute(null);
 
         assertThat(result).isEmpty();
         verify(marketQuoteRepository, never()).search(anyString());
@@ -45,18 +46,18 @@ class SearchTickersUseCaseImplTest {
 
     @Test
     void non_blank_query_trims_and_delegates_to_repository() {
-        List<MarketQuote> expected = List.of(new MarketQuote(
-                new Ticker("GGAL"),
-                Money.of(BigDecimal.valueOf(1500), "ARS"),
-                BigDecimal.ZERO,
-                BigDecimal.ONE,
-                LocalDateTime.now()
-        ));
-        when(marketQuoteRepository.search("ggal")).thenReturn(expected);
+        Ticker ticker = new Ticker("GGAL");
+        Money price = Money.of(BigDecimal.valueOf(1500), "ARS");
+        BigDecimal variation = new BigDecimal("2.50");
+        when(marketQuoteRepository.search("ggal")).thenReturn(List.of(
+                new MarketQuote(ticker, price, variation, BigDecimal.ONE, LocalDateTime.now())));
 
-        List<MarketQuote> result = useCase.execute("  ggal ");
+        List<TickerSearchResult> result = useCase.execute("  ggal ");
 
-        assertThat(result).isEqualTo(expected);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).ticker()).isEqualTo(ticker);
+        assertThat(result.get(0).price()).isEqualTo(price);
+        assertThat(result.get(0).variation()).isEqualByComparingTo(variation);
         verify(marketQuoteRepository).search("ggal");
     }
 }
