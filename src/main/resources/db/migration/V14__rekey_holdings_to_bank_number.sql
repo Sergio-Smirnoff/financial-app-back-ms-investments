@@ -1,3 +1,5 @@
+DELETE FROM investments.holdings WHERE account_cbu IS NULL OR length(account_cbu) < 3;
+
 ALTER TABLE investments.holdings ADD COLUMN bank_number varchar(3);
 UPDATE investments.holdings SET bank_number = substr(account_cbu, 1, 3);
 ALTER TABLE investments.holdings ALTER COLUMN bank_number SET NOT NULL;
