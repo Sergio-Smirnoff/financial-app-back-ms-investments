@@ -19,8 +19,13 @@ import com.financialapp.investments.domain.usecase.holding.command.GetHoldingDet
 import com.financialapp.investments.domain.usecase.holding.command.ListHoldingsCommand;
 import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
+import com.financialapp.investments.domain.model.market.PriceRange;
+import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
+import com.financialapp.investments.domain.usecase.market.command.GetTickerResearchCommand;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
+import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetHoldingsWithPricesCommand;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioEvolutionCommand;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioSummaryCommand;
@@ -36,6 +41,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -88,6 +94,46 @@ class CommandsAndResponsesTest {
     void marketCommands_accessors() {
         GetMarketDiscoveryCommand m = new GetMarketDiscoveryCommand(USER, 5);
         assertThat(m.limit()).isEqualTo(5);
+    }
+
+    @Test
+    void tickerResearch_accessors() {
+        GetTickerResearchCommand cmd = new GetTickerResearchCommand(TIC, AssetType.STOCK, PriceRange.D30);
+        assertThat(cmd.ticker()).isEqualTo(TIC);
+        assertThat(cmd.assetType()).isEqualTo(AssetType.STOCK);
+        assertThat(cmd.range()).isEqualTo(PriceRange.D30);
+
+        PriceDetail quote = new PriceDetail(
+                new BigDecimal("100.00"),
+                new BigDecimal("98.00"),
+                new BigDecimal("102.00"),
+                new BigDecimal("97.00"),
+                new BigDecimal("10000"),
+                new BigDecimal("1.50"),
+                "ARS"
+        );
+
+        HistoricalPricePoint point = new HistoricalPricePoint(
+                new BigDecimal("100.00"),
+                new BigDecimal("98.00"),
+                new BigDecimal("102.00"),
+                new BigDecimal("97.00"),
+                new BigDecimal("10000"),
+                new BigDecimal("1.50"),
+                "ARS",
+                LocalDateTime.of(2026, 6, 12, 10, 0)
+        );
+
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(quote), List.of(point));
+        assertThat(result.ticker()).isEqualTo(TIC);
+        assertThat(result.currentQuote()).isPresent();
+        assertThat(result.currentQuote().get()).isEqualTo(quote);
+        assertThat(result.series()).containsExactly(point);
+
+        assertThatThrownBy(() -> new TickerResearchResult(null, Optional.empty(), List.of()))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new TickerResearchResult(TIC, Optional.empty(), null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test

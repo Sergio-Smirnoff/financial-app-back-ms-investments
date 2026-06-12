@@ -6,10 +6,14 @@ import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.history.AssetPriceHistory;
+import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
 import com.financialapp.investments.domain.model.holding.*;
+import com.financialapp.investments.domain.model.market.MarketQuote;
 import com.financialapp.investments.domain.model.price.AssetType;
+import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
+import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import com.financialapp.investments.domain.usecase.portfolio.response.AllocationBreakdownResult;
 import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
 import com.financialapp.investments.domain.usecase.portfolio.response.HoldingWithPriceResult;
@@ -23,6 +27,8 @@ import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
 import com.financialapp.investments.web.dto.response.PortfolioEvolutionResponse;
 import com.financialapp.investments.web.dto.response.PortfolioSummaryResponse;
 import com.financialapp.investments.web.dto.response.PriceHistoryResponse;
+import com.financialapp.investments.web.dto.response.TickerResearchResponse;
+import com.financialapp.investments.web.dto.response.TickerSearchResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -226,5 +232,55 @@ class WebMappersTest {
         MarketDiscoveryResponse r = new MarketWebMapper().toResponse(o);
         assertThat(r.getVariation()).isNull();
         assertThat(r.getVolume()).isNull();
+    }
+
+    @Test
+    void marketMapper_toSearchResponse_passesAllFields() {
+        MarketQuote q = new MarketQuote(TIC, PRICE, new BigDecimal("2.50"), new BigDecimal("500"), NOW);
+        TickerSearchResponse r = new MarketWebMapper().toSearchResponse(q);
+        assertThat(r.getTicker()).isEqualTo("AAPL");
+        assertThat(r.getPrice()).isEqualTo("100.00");
+        assertThat(r.getCurrency()).isEqualTo("ARS");
+        assertThat(r.getVariation()).isEqualTo("2.50");
+    }
+
+    @Test
+    void marketMapper_toSearchResponse_nullVariation_serialisedAsNull() {
+        MarketQuote q = new MarketQuote(TIC, PRICE, null, null, NOW);
+        TickerSearchResponse r = new MarketWebMapper().toSearchResponse(q);
+        assertThat(r.getVariation()).isNull();
+    }
+
+    @Test
+    void marketMapper_toResearchResponse_withQuoteAndSeries() {
+        PriceDetail detail = new PriceDetail(
+                new BigDecimal("150.00"), new BigDecimal("145.00"),
+                new BigDecimal("155.00"), new BigDecimal("140.00"),
+                new BigDecimal("1000"), new BigDecimal("3.45"), "USD");
+        HistoricalPricePoint point = new HistoricalPricePoint(
+                new BigDecimal("148.00"), new BigDecimal("145.00"),
+                new BigDecimal("150.00"), new BigDecimal("143.00"),
+                new BigDecimal("900"), new BigDecimal("2.00"), "USD",
+                NOW.minusDays(1));
+        TickerResearchResult result = new TickerResearchResult(TIC, java.util.Optional.of(detail), java.util.List.of(point));
+        TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
+        assertThat(r.getTicker()).isEqualTo("AAPL");
+        assertThat(r.getCurrency()).isEqualTo("USD");
+        assertThat(r.getCurrentPrice()).isEqualTo("150.00");
+        assertThat(r.getVariation()).isEqualTo("3.45");
+        assertThat(r.getSeries()).hasSize(1);
+        assertThat(r.getSeries().get(0).getPrice()).isEqualTo("148.00");
+        assertThat(r.getSeries().get(0).getDate()).isEqualTo(NOW.minusDays(1).toLocalDate().toString());
+    }
+
+    @Test
+    void marketMapper_toResearchResponse_emptyQuote_nullsCurrentPriceFields() {
+        TickerResearchResult result = new TickerResearchResult(TIC, java.util.Optional.empty(), java.util.List.of());
+        TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
+        assertThat(r.getTicker()).isEqualTo("AAPL");
+        assertThat(r.getCurrency()).isNull();
+        assertThat(r.getCurrentPrice()).isNull();
+        assertThat(r.getVariation()).isNull();
+        assertThat(r.getSeries()).isEmpty();
     }
 }
