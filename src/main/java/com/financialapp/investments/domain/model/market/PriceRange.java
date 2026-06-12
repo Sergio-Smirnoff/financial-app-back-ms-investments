@@ -1,14 +1,20 @@
 package com.financialapp.investments.domain.model.market;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 public enum PriceRange {
-    D30(30), D90(90), Y1(365), ALL(365 * 5);
+    D30(30, ChronoUnit.DAYS),
+    D90(90, ChronoUnit.DAYS),
+    Y1(1, ChronoUnit.YEARS),
+    ALL(5, ChronoUnit.YEARS);
 
-    private final int days;
+    private final long amount;
+    private final ChronoUnit unit;
 
-    PriceRange(int days) {
-        this.days = days;
+    PriceRange(long amount, ChronoUnit unit) {
+        this.amount = amount;
+        this.unit = unit;
     }
 
     public static PriceRange of(String code) {
@@ -16,7 +22,7 @@ public enum PriceRange {
     }
 
     public LocalDate from(LocalDate reference) {
-        return reference.minusDays(days);
+        return reference.minus(amount, unit);
     }
 
     public LocalDate to(LocalDate reference) {

@@ -19,6 +19,18 @@ class PriceRangeTest {
     }
 
     @Test
+    void y1_spans_one_calendar_year() {
+        LocalDate today = LocalDate.of(2026, 6, 11);
+        assertThat(PriceRange.of("Y1").from(today)).isEqualTo(LocalDate.of(2025, 6, 11));
+    }
+
+    @Test
+    void all_spans_five_calendar_years() {
+        LocalDate today = LocalDate.of(2026, 6, 11);
+        assertThat(PriceRange.of("ALL").from(today)).isEqualTo(LocalDate.of(2021, 6, 11));
+    }
+
+    @Test
     void rejects_unknown_code() {
         assertThatThrownBy(() -> PriceRange.of("XX")).isInstanceOf(IllegalArgumentException.class);
     }
