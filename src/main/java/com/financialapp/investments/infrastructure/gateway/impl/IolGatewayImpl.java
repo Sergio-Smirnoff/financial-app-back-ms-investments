@@ -43,6 +43,8 @@ public class IolGatewayImpl implements IolGateway {
         try {
             return iolApiClient.getHistoricalSeries(ticker.value(), assetType, from, to)
                     .stream()
+                    .filter(point -> point.detail().lastPrice() != null
+                            && point.detail().lastPrice().signum() > 0)
                     .map(this::toDomainHistoricalPoint)
                     .toList();
         } catch (RuntimeException e) {
