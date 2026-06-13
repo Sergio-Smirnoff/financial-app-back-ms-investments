@@ -77,7 +77,8 @@ public class IolApiClient {
                         parseBigDecimal(body, "maximo"),
                         parseBigDecimal(body, "minimo"),
                         parseBigDecimal(body, "volumen"),
-                        parseBigDecimal(body, "variacion")
+                        parseBigDecimal(body, "variacion"),
+                        IolCurrencyResolver.resolve(parseText(body, "moneda"))
                 ));
             }
         }
@@ -142,7 +143,8 @@ public class IolApiClient {
                     parseBigDecimal(item, "maximo"),
                     parseBigDecimal(item, "minimo"),
                     parseBigDecimal(item, "volumenNominal"),
-                    parseBigDecimal(item, "variacion")
+                    parseBigDecimal(item, "variacion"),
+                    IolCurrencyResolver.resolve(parseText(item, "moneda"))
             );
             points.add(new IolHistoricalPricePoint(pricedAt, detail));
         }
@@ -189,7 +191,8 @@ public class IolApiClient {
                 quotes.add(new IolMarketQuote(
                         node.get("simbolo").asText(),
                         parseBigDecimal(node, "ultimoPrecio"),
-                        parseBigDecimal(node, "variacion")
+                        parseBigDecimal(node, "variacion"),
+                        IolCurrencyResolver.resolve(parseText(node, "moneda"))
                 ));
             }
         } else {
@@ -201,6 +204,11 @@ public class IolApiClient {
     private BigDecimal parseBigDecimal(JsonNode node, String field) {
         JsonNode n = node.get(field);
         return (n != null && !n.isNull()) ? new BigDecimal(n.asText()) : null;
+    }
+
+    private String parseText(JsonNode node, String field) {
+        JsonNode n = node.get(field);
+        return (n != null && !n.isNull()) ? n.asText() : null;
     }
 
     private synchronized void ensureAuthenticated() {

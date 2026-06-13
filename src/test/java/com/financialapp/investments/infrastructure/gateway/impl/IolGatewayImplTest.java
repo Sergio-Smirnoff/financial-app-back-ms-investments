@@ -38,13 +38,13 @@ class IolGatewayImplTest {
     private static final LocalDate D2 = LocalDate.of(2026, 1, 2);
 
     @Test
-    void getPrice_present_mapsToDomain_withDefaultCurrency() {
+    void getPrice_present_mapsToDomain_withResolvedCurrency() {
         IolPriceDetail dto = new IolPriceDetail(new BigDecimal("100"), BigDecimal.ONE,
-                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);
+                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, "USD");
         when(apiClient.getPrice("AAPL", AssetType.STOCK)).thenReturn(Optional.of(dto));
         Optional<PriceDetail> r = gateway.getPrice(TIC, AssetType.STOCK);
         assertThat(r).isPresent();
-        assertThat(r.get().currency()).isEqualTo("ARS");
+        assertThat(r.get().currency()).isEqualTo("USD");
         assertThat(r.get().lastPrice()).isEqualByComparingTo("100");
     }
 
@@ -63,13 +63,13 @@ class IolGatewayImplTest {
 
     @Test
     void getHistoricalSeries_mapsAllPoints() {
-        IolPriceDetail d = new IolPriceDetail(new BigDecimal("10"), null, null, null, null, null);
+        IolPriceDetail d = new IolPriceDetail(new BigDecimal("10"), null, null, null, null, null, "USD");
         IolHistoricalPricePoint p = new IolHistoricalPricePoint(LocalDateTime.of(2026, 1, 1, 0, 0), d);
         when(apiClient.getHistoricalSeries("AAPL", AssetType.CEDEAR, D1, D2)).thenReturn(List.of(p));
 
         List<HistoricalPricePoint> r = gateway.getHistoricalSeries(TIC, AssetType.CEDEAR, D1, D2);
         assertThat(r).hasSize(1);
-        assertThat(r.get(0).currency()).isEqualTo("ARS");
+        assertThat(r.get(0).currency()).isEqualTo("USD");
         assertThat(r.get(0).lastPrice()).isEqualByComparingTo("10");
     }
 
@@ -83,15 +83,16 @@ class IolGatewayImplTest {
 
     @Test
     void getPanelQuotes_mapsAll_withNullPriceFallbackZero() {
-        IolMarketQuote q1 = new IolMarketQuote("AAPL", new BigDecimal("100"), BigDecimal.ONE);
-        IolMarketQuote q2 = new IolMarketQuote("GOOG", null, BigDecimal.ONE);
+        IolMarketQuote q1 = new IolMarketQuote("AAPL", new BigDecimal("100"), BigDecimal.ONE, "USD");
+        IolMarketQuote q2 = new IolMarketQuote("GOOG", null, BigDecimal.ONE, "ARS");
         when(apiClient.getPanelQuotes("merval")).thenReturn(List.of(q1, q2));
 
         List<MarketQuote> r = gateway.getPanelQuotes("merval");
         assertThat(r).hasSize(2);
         assertThat(r.get(0).price().amount()).isEqualByComparingTo("100");
         assertThat(r.get(1).price().amount()).isEqualByComparingTo("0");
-        assertThat(r.get(0).price().currency().getCurrencyCode()).isEqualTo("ARS");
+        assertThat(r.get(0).price().currency().getCurrencyCode()).isEqualTo("USD");
+        assertThat(r.get(1).price().currency().getCurrencyCode()).isEqualTo("ARS");
     }
 
     @Test
