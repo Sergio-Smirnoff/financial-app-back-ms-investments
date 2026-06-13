@@ -1,6 +1,6 @@
 package com.financialapp.investments.application.holding;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 
 import com.financialapp.investments.application.holding.impl.GetHoldingDetailUseCaseImpl;
 import com.financialapp.investments.domain.common.model.Money;
@@ -93,7 +93,7 @@ class GetHoldingDetailUseCaseImplTest {
     }
 
     private static Holding holding(String ticker, BigDecimal quantity, BigDecimal avgPrice) {
-        return new Holding(new HoldingId(42L), USER_ID, new Cbu("0070009000000000000017"),
+        return new Holding(new HoldingId(42L), USER_ID, new BankNumber("007"),
                 new Ticker(ticker), "Test", AssetType.STOCK,
                 new HoldingQuantity(quantity), Money.of(avgPrice, "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),

@@ -1,6 +1,7 @@
 package com.financialapp.investments.domain.event;
 
 import com.financialapp.investments.domain.common.DomainEvent;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -16,7 +17,7 @@ public record HoldingCreatedEvent(
         UserId userId,
         Ticker ticker,
         AssetType assetType,
-        Cbu accountCbu,
+        BankNumber bankNumber,
         Cbu fundingCbu,
         HoldingQuantity quantity,
         Money avgPurchasePrice,

@@ -5,5 +5,6 @@ import java.math.BigDecimal;
 public record IolMarketQuote(
         String ticker,
         BigDecimal price,
-        BigDecimal variation
+        BigDecimal variation,
+        String currency
 ) {}

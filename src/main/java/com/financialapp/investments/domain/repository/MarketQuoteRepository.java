@@ -13,4 +13,6 @@ public interface MarketQuoteRepository {
     List<MarketQuote> findAll();
 
     Optional<MarketQuote> findByTicker(Ticker ticker);
+
+    List<MarketQuote> search(String query);
 }

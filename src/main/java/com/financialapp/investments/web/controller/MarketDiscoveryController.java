@@ -1,10 +1,19 @@
 package com.financialapp.investments.web.controller;
 
-import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
-import com.financialapp.investments.domain.usecase.market.GetMarketDiscoveryUseCase;
 import com.financialapp.investments.domain.common.model.UserId;
+import com.financialapp.investments.domain.model.holding.Ticker;
+import com.financialapp.investments.domain.model.market.PriceRange;
+import com.financialapp.investments.domain.model.price.AssetType;
+import com.financialapp.investments.domain.usecase.market.GetMarketDiscoveryUseCase;
+import com.financialapp.investments.domain.usecase.market.GetTickerResearchUseCase;
+import com.financialapp.investments.domain.usecase.market.SearchTickersUseCase;
+import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
+import com.financialapp.investments.domain.usecase.market.command.GetTickerResearchCommand;
+import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import com.financialapp.commons.core.response.ApiResponse;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
+import com.financialapp.investments.web.dto.response.TickerResearchResponse;
+import com.financialapp.investments.web.dto.response.TickerSearchResponse;
 import com.financialapp.investments.web.mapper.MarketWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +30,8 @@ import java.util.List;
 public class MarketDiscoveryController {
 
     private final GetMarketDiscoveryUseCase getMarketDiscoveryUseCase;
+    private final SearchTickersUseCase searchTickersUseCase;
+    private final GetTickerResearchUseCase getTickerResearchUseCase;
     private final MarketWebMapper marketWebMapper;
 
     @GetMapping("/discovery")
@@ -34,5 +45,25 @@ public class MarketDiscoveryController {
                 .map(marketWebMapper::toResponse)
                 .toList();
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search the cached market panel by ticker symbol")
+    public ResponseEntity<ApiResponse<List<TickerSearchResponse>>> search(@RequestParam String q) {
+        List<TickerSearchResponse> response = searchTickersUseCase.execute(q).stream()
+                .map(marketWebMapper::toSearchResponse)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping("/tickers/{ticker}")
+    @Operation(summary = "Live research for a ticker: current quote + historical series")
+    public ResponseEntity<ApiResponse<TickerResearchResponse>> research(
+            @PathVariable String ticker,
+            @RequestParam(defaultValue = "STOCK") String assetType,
+            @RequestParam(defaultValue = "D90") String range) {
+        TickerResearchResult result = getTickerResearchUseCase.execute(new GetTickerResearchCommand(
+                new Ticker(ticker), AssetType.valueOf(assetType.toUpperCase()), PriceRange.of(range)));
+        return ResponseEntity.ok(ApiResponse.ok(marketWebMapper.toResearchResponse(result)));
     }
 }

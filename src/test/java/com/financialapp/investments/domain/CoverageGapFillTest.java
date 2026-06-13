@@ -1,6 +1,6 @@
 package com.financialapp.investments.domain;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.investments.domain.common.model.BankNumber;
 
 import com.financialapp.investments.application.portfolio.impl.GetPortfolioSummaryUseCaseImpl;
 import com.financialapp.investments.application.price.impl.EvaluateThresholdsUseCaseImpl;
@@ -120,7 +120,7 @@ class CoverageGapFillTest {
 
         private static Holding holding(BigDecimal avg, ThresholdConfig tc, NotificationTimestamps ts) {
             return new Holding(new HoldingId(1L), new UserId(1L),
-                    new Cbu("0070009000000000000017"),
+                    new BankNumber("007"),
                     new Ticker("AAPL"), "n", AssetType.STOCK,
                     new HoldingQuantity(new BigDecimal("10")),
                     new Money(avg, java.util.Currency.getInstance("ARS")),
@@ -144,7 +144,7 @@ class CoverageGapFillTest {
         @Test
         void zeroCostBasis_plPercentIsZero_andBreakdownPercentZero() {
             Holding h = new Holding(new HoldingId(1L), new UserId(1L),
-                    new Cbu("0070009000000000000017"),
+                    new BankNumber("007"),
                     new Ticker("AAPL"), "n", AssetType.STOCK,
                     new HoldingQuantity(BigDecimal.ONE),
                     Money.of(BigDecimal.ZERO, "ARS"),

@@ -24,8 +24,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class IolGatewayImpl implements IolGateway {
 
-    private static final String DEFAULT_CURRENCY = "ARS";
-
     private final IolApiClient iolApiClient;
 
     @Override
@@ -45,6 +43,8 @@ public class IolGatewayImpl implements IolGateway {
         try {
             return iolApiClient.getHistoricalSeries(ticker.value(), assetType, from, to)
                     .stream()
+                    .filter(point -> point.detail().lastPrice() != null
+                            && point.detail().lastPrice().signum() > 0)
                     .map(this::toDomainHistoricalPoint)
                     .toList();
         } catch (RuntimeException e) {
@@ -74,7 +74,7 @@ public class IolGatewayImpl implements IolGateway {
                 old.lowPrice(),
                 old.volume(),
                 old.dailyVariation(),
-                DEFAULT_CURRENCY
+                old.currency()
         );
     }
 
@@ -86,7 +86,7 @@ public class IolGatewayImpl implements IolGateway {
                 old.detail().lowPrice(),
                 old.detail().volume(),
                 old.detail().dailyVariation(),
-                DEFAULT_CURRENCY,
+                old.detail().currency(),
                 old.pricedAt()
         );
     }
@@ -94,7 +94,7 @@ public class IolGatewayImpl implements IolGateway {
     private MarketQuote toDomainMarketQuote(IolMarketQuote old) {
         return new MarketQuote(
                 new Ticker(old.ticker()),
-                Money.of(old.price() != null ? old.price() : java.math.BigDecimal.ZERO, DEFAULT_CURRENCY),
+                Money.of(old.price() != null ? old.price() : java.math.BigDecimal.ZERO, old.currency()),
                 old.variation(),
                 null,
                 LocalDateTime.now()

@@ -1,5 +1,6 @@
 package com.financialapp.investments.domain;
 
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.PageRequest;
@@ -18,8 +19,14 @@ import com.financialapp.investments.domain.usecase.holding.command.GetHoldingDet
 import com.financialapp.investments.domain.usecase.holding.command.ListHoldingsCommand;
 import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
+import com.financialapp.investments.domain.model.market.PriceRange;
+import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
+import com.financialapp.investments.domain.usecase.market.command.GetTickerResearchCommand;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
+import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
+import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetHoldingsWithPricesCommand;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioEvolutionCommand;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioSummaryCommand;
@@ -35,6 +42,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +52,7 @@ class CommandsAndResponsesTest {
     private static final UserId USER = new UserId(1L);
     private static final HoldingId HID = new HoldingId(10L);
     private static final Cbu ACC = new Cbu("0070009000000000000100");
+    private static final BankNumber BANK = new BankNumber("007");
     private static final Ticker TIC = new Ticker("AAPL");
     private static final HoldingQuantity QTY = new HoldingQuantity(BigDecimal.ONE);
     private static final Money ARS = Money.of(new BigDecimal("100"), "ARS");
@@ -55,17 +64,17 @@ class CommandsAndResponsesTest {
         CloseHoldingCommand c = new CloseHoldingCommand(USER, HID, ACC);
         assertThat(c.destinationCbu()).isEqualTo(ACC);
 
-        CreateHoldingCommand cr = new CreateHoldingCommand(USER, ACC, TIC, "n",
+        CreateHoldingCommand cr = new CreateHoldingCommand(USER, BANK, TIC, "n",
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
         assertThat(cr.ticker()).isEqualTo(TIC);
         assertThat(cr.fundingCbu()).isEqualTo(ACC);
 
-        UpdateHoldingCommand up = new UpdateHoldingCommand(USER, HID, ACC, TIC, "n",
+        UpdateHoldingCommand up = new UpdateHoldingCommand(USER, HID, BANK, TIC, "n",
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
         assertThat(up.newQuantity()).isEqualTo(QTY);
 
-        GetAccountValuationCommand g = new GetAccountValuationCommand(ACC);
-        assertThat(g.accountCbu()).isEqualTo(ACC);
+        GetAccountValuationCommand g = new GetAccountValuationCommand(USER, BANK, java.util.Currency.getInstance("ARS"));
+        assertThat(g.bankNumber()).isEqualTo(BANK);
 
         GetHoldingDetailCommand d = new GetHoldingDetailCommand(USER, HID);
         assertThat(d.holdingId()).isEqualTo(HID);
@@ -89,6 +98,46 @@ class CommandsAndResponsesTest {
     }
 
     @Test
+    void tickerResearch_accessors() {
+        GetTickerResearchCommand cmd = new GetTickerResearchCommand(TIC, AssetType.STOCK, PriceRange.D30);
+        assertThat(cmd.ticker()).isEqualTo(TIC);
+        assertThat(cmd.assetType()).isEqualTo(AssetType.STOCK);
+        assertThat(cmd.range()).isEqualTo(PriceRange.D30);
+
+        PriceDetail quote = new PriceDetail(
+                new BigDecimal("100.00"),
+                new BigDecimal("98.00"),
+                new BigDecimal("102.00"),
+                new BigDecimal("97.00"),
+                new BigDecimal("10000"),
+                new BigDecimal("1.50"),
+                "ARS"
+        );
+
+        HistoricalPricePoint point = new HistoricalPricePoint(
+                new BigDecimal("100.00"),
+                new BigDecimal("98.00"),
+                new BigDecimal("102.00"),
+                new BigDecimal("97.00"),
+                new BigDecimal("10000"),
+                new BigDecimal("1.50"),
+                "ARS",
+                LocalDateTime.of(2026, 6, 12, 10, 0)
+        );
+
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(quote), List.of(point));
+        assertThat(result.ticker()).isEqualTo(TIC);
+        assertThat(result.currentQuote()).isPresent();
+        assertThat(result.currentQuote().get()).isEqualTo(quote);
+        assertThat(result.series()).containsExactly(point);
+
+        assertThatThrownBy(() -> new TickerResearchResult(null, Optional.empty(), List.of()))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new TickerResearchResult(TIC, Optional.empty(), null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
     void priceCommands_accessors() {
         GetPriceHistoryCommand c = new GetPriceHistoryCommand(TIC, NOW, NOW.plusDays(1));
         assertThat(c.ticker()).isEqualTo(TIC);
@@ -97,9 +146,9 @@ class CommandsAndResponsesTest {
 
     @Test
     void accountValuationResult_accessors() {
-        AccountValuationResult r = new AccountValuationResult(ACC, BigDecimal.TEN, "ARS", 3L);
-        assertThat(r.totalValuation()).isEqualByComparingTo("10");
-        assertThat(r.currency()).isEqualTo("ARS");
+        AccountValuationResult r = new AccountValuationResult(BANK, Money.of(BigDecimal.TEN, "ARS"), 3L);
+        assertThat(r.totalValuation().amount()).isEqualByComparingTo("10");
+        assertThat(r.totalValuation().currency().getCurrencyCode()).isEqualTo("ARS");
         assertThat(r.holdingCount()).isEqualTo(3L);
     }
 
@@ -111,8 +160,24 @@ class CommandsAndResponsesTest {
     }
 
     @Test
+    void tickerSearchResult_accessors_and_nullGuards() {
+        TickerSearchResult r = new TickerSearchResult(TIC, ARS, new BigDecimal("1.50"));
+        assertThat(r.ticker()).isEqualTo(TIC);
+        assertThat(r.price()).isEqualTo(ARS);
+        assertThat(r.variation()).isEqualByComparingTo("1.50");
+
+        TickerSearchResult noVariation = new TickerSearchResult(TIC, ARS, null);
+        assertThat(noVariation.variation()).isNull();
+
+        assertThatThrownBy(() -> new TickerSearchResult(null, ARS, null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new TickerSearchResult(TIC, null, null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
     void holdingWithPriceResult_accessors() {
-        Holding h = new Holding(HID, USER, ACC, TIC, "n", AssetType.STOCK, QTY, ARS,
+        Holding h = new Holding(HID, USER, BANK, TIC, "n", AssetType.STOCK, QTY, ARS,
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(), NOW, NOW);
         HoldingWithPriceResult r = new HoldingWithPriceResult(h, BigDecimal.ONE,
                 BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO);

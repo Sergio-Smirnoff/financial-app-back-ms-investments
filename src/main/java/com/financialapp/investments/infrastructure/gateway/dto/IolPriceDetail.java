@@ -8,5 +8,6 @@ public record IolPriceDetail(
         BigDecimal highPrice,
         BigDecimal lowPrice,
         BigDecimal volume,
-        BigDecimal dailyVariation
+        BigDecimal dailyVariation,
+        String currency
 ) {}

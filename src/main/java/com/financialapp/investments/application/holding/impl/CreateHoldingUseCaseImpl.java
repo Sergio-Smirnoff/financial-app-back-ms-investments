@@ -33,7 +33,7 @@ public class CreateHoldingUseCaseImpl implements CreateHoldingUseCase {
 
         Holding holding = Holding.create(
                 command.userId(),
-                command.accountCbu(),
+                command.bankNumber(),
                 command.ticker(),
                 command.name(),
                 command.assetType(),
@@ -46,7 +46,7 @@ public class CreateHoldingUseCaseImpl implements CreateHoldingUseCase {
 
         eventPublisher.publish(new HoldingCreatedEvent(
                 saved.id(), saved.userId(), saved.ticker(), saved.assetType(),
-                saved.accountCbu(), command.fundingCbu(),
+                saved.bankNumber(), command.fundingCbu(),
                 saved.quantity(), saved.avgPurchasePrice(), totalCost,
                 LocalDateTime.now()
         ));

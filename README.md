@@ -9,7 +9,7 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 ## Tech Stack
 
 - Java 21, Spring Boot 3.4.2 (MVC), Spring Data JPA, Flyway
-- IOL API client — OAuth2 password-grant, Resilience4j `@Retry` + `@CircuitBreaker`
+- IOL API client — OAuth2 password-grant, Resilience4j `@Retry` + `@CircuitBreaker`. Per-instrument currency is read from IOL's `moneda` field (`IolCurrencyResolver`: `dolar*` → USD, else ARS); never hardcoded.
 - Kafka producer (CloudEvents 1.0, binary mode): `investments.threshold.breached` via transactional outbox + commons `OutboxRelay`; producer-only (no consumers)
 - MapStruct, Lombok
 - Feign client → ms-finances (buy/sell cash-flow recording)
@@ -18,7 +18,7 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 
 ## Domain
 
-**Holding** — ticker, name, AssetType (STOCK / BOND / CEDEAR / FCI), HoldingQuantity, Money avgPurchasePrice, currency, accountCbu (metadata only — never a money endpoint), ThresholdConfig (`gainPct`, `lossPct`), NotificationTimestamps (`lastGainNotifiedAt`, `lastLossNotifiedAt`).
+**Holding** — ticker, name, AssetType (STOCK / BOND / CEDEAR / FCI), HoldingQuantity, Money avgPurchasePrice, currency, `BankNumber` (holdings are keyed by bank + currency; the derived "investment account" is a read-model Σ price×qty, not a real account), ThresholdConfig (`gainPct`, `lossPct`), NotificationTimestamps (`lastGainNotifiedAt`, `lastLossNotifiedAt`).
 
 **AssetPrice** — live OHLC snapshot per ticker (lastPrice, openPrice, highPrice, lowPrice, volume, dailyVariation, pricedAt).
 
@@ -40,9 +40,13 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 
 After each price refresh `EvaluateThresholdsUseCase` checks P&L % against each holding's `ThresholdConfig`. On breach it writes an `investments.threshold.breached` CloudEvent (1.0, binary mode; `data` = `InvestmentThresholdData`) to the `outbox_event` table in the same DB transaction — the commons `OutboxRelay` publishes it to Kafka (consumed by ms-notifications) — and stamps the matching `NotificationTimestamps` field to prevent re-notification.
 
+### IOL historical series — null/zero price filtering
+
+`IolGatewayImpl.getHistoricalSeries` now drops any historical point whose `lastPrice` is null or ≤ 0 (no-trade sessions and pre-open candles returned by IOL before the market opens). This eliminates the trailing drop-to-zero spike that appeared on price charts when a refresh ran before the first trade of the day.
+
 ### Bank-contract integration
 
-INVESTMENT accounts in ms-banks are metadata only — they throw on any balance movement. Cash for buys and sells flows as CBU-to-CBU transactions recorded in ms-finances. `FinancesGatewayImpl` resolves the broker sentinel CBU from env vars (`INVEST_BROKER_CBU_ARS`, `INVEST_BROKER_CBU_USD`, …) by currency code. A `FinancesServiceException` aborts the entire operation before the holding is persisted.
+There is no INVESTMENT account in ms-banks — it was removed. A holding belongs to a `BankNumber`, and the "investment account" shown in the UI is a derived read-model (Σ price×qty grouped by bank + currency). Cash for buys and sells flows as CBU-to-CBU transactions recorded in ms-finances. `FinancesGatewayImpl` resolves the broker sentinel CBU from env vars (`INVEST_BROKER_CBU_ARS`, `INVEST_BROKER_CBU_USD`, …) by currency code. A `FinancesServiceException` aborts the entire operation before the holding is persisted.
 
 ---
 

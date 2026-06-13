@@ -7,6 +7,7 @@ import com.financialapp.investments.domain.event.HoldingClosedEvent;
 import com.financialapp.investments.domain.event.HoldingCreatedEvent;
 import com.financialapp.investments.domain.event.HoldingUpdatedEvent;
 import com.financialapp.investments.domain.event.PriceThresholdBreachedEvent;
+import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Cbu;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
@@ -25,19 +26,20 @@ class DomainEventsTest {
     private static final HoldingId HID = new HoldingId(10L);
     private static final Ticker TIC = new Ticker("AAPL");
     private static final Cbu ACC = new Cbu("0070009000000000000100");
+    private static final BankNumber BANK = new BankNumber("007");
     private static final Money ARS_100 = Money.of(new BigDecimal("100"), "ARS");
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 1, 0, 0);
 
     @Test
     void holdingCreatedEvent_exposesAccessors() {
         HoldingCreatedEvent e = new HoldingCreatedEvent(
-                HID, USER, TIC, AssetType.STOCK, ACC, ACC,
+                HID, USER, TIC, AssetType.STOCK, BANK, ACC,
                 new HoldingQuantity(BigDecimal.ONE), ARS_100, ARS_100, NOW);
         assertThat(e.holdingId()).isEqualTo(HID);
         assertThat(e.userId()).isEqualTo(USER);
         assertThat(e.ticker()).isEqualTo(TIC);
         assertThat(e.assetType()).isEqualTo(AssetType.STOCK);
-        assertThat(e.accountCbu()).isEqualTo(ACC);
+        assertThat(e.bankNumber()).isEqualTo(BANK);
         assertThat(e.fundingCbu()).isEqualTo(ACC);
         assertThat(e.totalCost()).isEqualTo(ARS_100);
         assertThat(e.occurredAt()).isEqualTo(NOW);
@@ -46,7 +48,7 @@ class DomainEventsTest {
     @Test
     void holdingCreatedEvent_acceptsNullFundingAccount() {
         HoldingCreatedEvent e = new HoldingCreatedEvent(
-                HID, USER, TIC, AssetType.STOCK, ACC, null,
+                HID, USER, TIC, AssetType.STOCK, BANK, null,
                 new HoldingQuantity(BigDecimal.ONE), ARS_100, ARS_100, NOW);
         assertThat(e.fundingCbu()).isNull();
     }
@@ -54,7 +56,7 @@ class DomainEventsTest {
     @Test
     void holdingUpdatedEvent_exposesAccessors() {
         HoldingUpdatedEvent e = new HoldingUpdatedEvent(
-                HID, USER, TIC, ACC, ACC,
+                HID, USER, TIC, BANK, ACC,
                 new HoldingQuantity(new BigDecimal("2")),
                 new HoldingQuantity(new BigDecimal("1")),
                 ARS_100, ARS_100, NOW);
@@ -67,7 +69,7 @@ class DomainEventsTest {
     @Test
     void holdingClosedEvent_exposesAccessors() {
         HoldingClosedEvent e = new HoldingClosedEvent(
-                HID, USER, TIC, ACC, ACC, ARS_100, NOW);
+                HID, USER, TIC, BANK, ACC, ARS_100, NOW);
         assertThat(e.holdingId()).isEqualTo(HID);
         assertThat(e.destinationCbu()).isEqualTo(ACC);
         assertThat(e.proceedsAmount()).isEqualTo(ARS_100);
