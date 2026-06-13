@@ -74,6 +74,21 @@ class IolGatewayImplTest {
     }
 
     @Test
+    void getHistoricalSeries_dropsNonPositiveLastPricePoints() {
+        IolPriceDetail good = new IolPriceDetail(new BigDecimal("10"), null, null, null, null, null, "USD");
+        IolPriceDetail zero = new IolPriceDetail(BigDecimal.ZERO, null, null, null, null, null, "USD");
+        IolHistoricalPricePoint pGood = new IolHistoricalPricePoint(LocalDateTime.of(2026, 1, 1, 0, 0), good);
+        IolHistoricalPricePoint pZero = new IolHistoricalPricePoint(LocalDateTime.of(2026, 1, 2, 0, 0), zero);
+        when(apiClient.getHistoricalSeries("AAPL", AssetType.STOCK, D1, D2))
+                .thenReturn(List.of(pGood, pZero));
+
+        List<HistoricalPricePoint> r = gateway.getHistoricalSeries(TIC, AssetType.STOCK, D1, D2);
+
+        assertThat(r).hasSize(1);
+        assertThat(r.get(0).lastPrice()).isEqualByComparingTo("10");
+    }
+
+    @Test
     void getHistoricalSeries_failure_wrapped() {
         when(apiClient.getHistoricalSeries(any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("boom"));
