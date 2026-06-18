@@ -1,11 +1,9 @@
 package com.financialapp.investments.domain.usecase.market;
 
 import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
-import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
-
-import java.util.List;
+import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 
 public interface GetMarketDiscoveryUseCase {
 
-    List<MarketOpportunityResult> execute(GetMarketDiscoveryCommand command);
+    MarketDiscoveryResult execute(GetMarketDiscoveryCommand command);
 }

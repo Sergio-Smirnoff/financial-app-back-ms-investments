@@ -11,7 +11,7 @@ import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.repository.HoldingRepository;
 import com.financialapp.investments.domain.repository.MarketQuoteRepository;
 import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
-import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
+import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,9 +45,10 @@ class GetMarketDiscoveryUseCaseImplTest {
                 quote("MSFT", new BigDecimal("5")),
                 quote("AMZN", new BigDecimal("20"))));
 
-        List<MarketOpportunityResult> r = useCase.execute(new GetMarketDiscoveryCommand(USER, 2));
+        MarketDiscoveryResult r = useCase.execute(new GetMarketDiscoveryCommand(USER, 2));
 
-        assertThat(r).extracting(x -> x.ticker().value()).containsExactly("AMZN", "GOOG");
+        assertThat(r.marketDataAvailable()).isTrue();
+        assertThat(r.opportunities()).extracting(x -> x.ticker().value()).containsExactly("AMZN", "GOOG");
     }
 
     @Test
@@ -57,9 +58,28 @@ class GetMarketDiscoveryUseCaseImplTest {
                 quote("X", null),
                 quote("Y", new BigDecimal("5"))));
 
-        List<MarketOpportunityResult> r = useCase.execute(new GetMarketDiscoveryCommand(USER, 10));
+        MarketDiscoveryResult r = useCase.execute(new GetMarketDiscoveryCommand(USER, 10));
 
-        assertThat(r).extracting(x -> x.ticker().value()).containsExactly("Y", "X");
+        assertThat(r.marketDataAvailable()).isTrue();
+        assertThat(r.opportunities()).extracting(x -> x.ticker().value()).containsExactly("Y", "X");
+    }
+
+    @Test
+    void reportsUnavailableWhenCacheEmpty() {
+        when(holdingRepository.findByUserId(any())).thenReturn(List.of());
+        when(marketQuoteRepository.findAll()).thenReturn(List.of());
+        MarketDiscoveryResult result = useCase.execute(new GetMarketDiscoveryCommand(new UserId(1L), 5));
+        assertThat(result.marketDataAvailable()).isFalse();
+        assertThat(result.opportunities()).isEmpty();
+    }
+
+    @Test
+    void reportsAvailableWhenCacheHasQuotes() {
+        when(holdingRepository.findByUserId(any())).thenReturn(List.of());
+        when(marketQuoteRepository.findAll()).thenReturn(List.of(quote("GGAL", new BigDecimal("3.5"))));
+        MarketDiscoveryResult result = useCase.execute(new GetMarketDiscoveryCommand(new UserId(1L), 5));
+        assertThat(result.marketDataAvailable()).isTrue();
+        assertThat(result.opportunities()).hasSize(1);
     }
 
     private static Holding holdingWithTicker(String t) {

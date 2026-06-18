@@ -36,14 +36,11 @@ public class MarketDiscoveryController {
 
     @GetMapping("/discovery")
     @Operation(summary = "Get trending assets not in user portfolio")
-    public ResponseEntity<ApiResponse<List<MarketDiscoveryResponse>>> getDiscovery(
+    public ResponseEntity<ApiResponse<MarketDiscoveryResponse>> getDiscovery(
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(defaultValue = "5") int limit) {
-        List<MarketDiscoveryResponse> response = getMarketDiscoveryUseCase
-                .execute(new GetMarketDiscoveryCommand(new UserId(userId), limit))
-                .stream()
-                .map(marketWebMapper::toResponse)
-                .toList();
+        MarketDiscoveryResponse response = marketWebMapper.toResponse(
+                getMarketDiscoveryUseCase.execute(new GetMarketDiscoveryCommand(new UserId(userId), limit)));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 

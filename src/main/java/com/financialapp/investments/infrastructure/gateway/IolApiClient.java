@@ -162,7 +162,7 @@ public class IolApiClient {
             return getPanelQuotesInternal(market);
         } catch (Exception ex) {
             log.error("Critical error fetching panel quotes for {}: {}", market, ex.getMessage());
-            return List.of();
+            throw new RuntimeException("IOL panel quotes fetch failed for " + market, ex);
         }
     }
 
