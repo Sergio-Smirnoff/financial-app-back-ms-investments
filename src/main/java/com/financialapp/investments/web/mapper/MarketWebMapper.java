@@ -1,7 +1,7 @@
 package com.financialapp.investments.web.mapper;
 
 import com.financialapp.investments.domain.model.price.PriceDetail;
-import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
+import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
@@ -14,13 +14,18 @@ import static com.financialapp.investments.web.mapper.BigDecimals.toPlain;
 @Component
 public class MarketWebMapper {
 
-    public MarketDiscoveryResponse toResponse(MarketOpportunityResult result) {
+    public MarketDiscoveryResponse toResponse(MarketDiscoveryResult result) {
         return MarketDiscoveryResponse.builder()
-                .ticker(result.ticker().value())
-                .price(toPlain(result.price().amount()))
-                .currency(result.price().currency().getCurrencyCode())
-                .variation(toPlain(result.variation()))
-                .volume(toPlain(result.volume()))
+                .marketDataAvailable(result.marketDataAvailable())
+                .opportunities(result.opportunities().stream()
+                        .map(o -> MarketDiscoveryResponse.Opportunity.builder()
+                                .ticker(o.ticker().value())
+                                .price(toPlain(o.price().amount()))
+                                .currency(o.price().currency().getCurrencyCode())
+                                .variation(toPlain(o.variation()))
+                                .volume(toPlain(o.volume()))
+                                .build())
+                        .toList())
                 .build();
     }
 
@@ -39,7 +44,7 @@ public class MarketWebMapper {
                 .currency(research.currentQuote().map(PriceDetail::currency).orElse(null))
                 .currentPrice(research.currentQuote().map(quote -> toPlain(quote.lastPrice())).orElse(null))
                 .variation(research.currentQuote().map(quote -> toPlain(quote.dailyVariation())).orElse(null))
-                .series(research.series().stream()
+                .series(research.series().points().stream()
                         .map(point -> TickerResearchResponse.Point.builder()
                                 .date(point.pricedAt().toLocalDate().toString())
                                 .price(toPlain(point.lastPrice()))

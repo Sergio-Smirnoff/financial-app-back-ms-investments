@@ -20,6 +20,7 @@ import com.financialapp.investments.domain.usecase.holding.command.ListHoldingsC
 import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
 import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
+import com.financialapp.investments.domain.model.history.PriceSeries;
 import com.financialapp.investments.domain.model.market.PriceRange;
 import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
@@ -125,13 +126,13 @@ class CommandsAndResponsesTest {
                 LocalDateTime.of(2026, 6, 12, 10, 0)
         );
 
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(quote), List.of(point));
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(quote), new PriceSeries(List.of(point)));
         assertThat(result.ticker()).isEqualTo(TIC);
         assertThat(result.currentQuote()).isPresent();
         assertThat(result.currentQuote().get()).isEqualTo(quote);
-        assertThat(result.series()).containsExactly(point);
+        assertThat(result.series().points()).containsExactly(point);
 
-        assertThatThrownBy(() -> new TickerResearchResult(null, Optional.empty(), List.of()))
+        assertThatThrownBy(() -> new TickerResearchResult(null, Optional.empty(), new PriceSeries(List.of())))
                 .isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> new TickerResearchResult(TIC, Optional.empty(), null))
                 .isInstanceOf(NullPointerException.class);
