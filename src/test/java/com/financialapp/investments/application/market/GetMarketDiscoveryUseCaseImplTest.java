@@ -82,6 +82,17 @@ class GetMarketDiscoveryUseCaseImplTest {
         assertThat(result.opportunities()).hasSize(1);
     }
 
+    @Test
+    void reportsAvailableWithEmptyOpportunitiesWhenUserOwnsAllCachedTickers() {
+        when(holdingRepository.findByUserId(USER)).thenReturn(List.of(
+                holdingWithTicker("GGAL")));
+        when(marketQuoteRepository.findAll()).thenReturn(List.of(
+                quote("GGAL", new BigDecimal("3.5"))));
+        MarketDiscoveryResult result = useCase.execute(new GetMarketDiscoveryCommand(USER, 5));
+        assertThat(result.marketDataAvailable()).isTrue();
+        assertThat(result.opportunities()).isEmpty();
+    }
+
     private static Holding holdingWithTicker(String t) {
         return new Holding(new HoldingId(1L), USER, new BankNumber("007"),
                 new Ticker(t), "n", AssetType.STOCK,

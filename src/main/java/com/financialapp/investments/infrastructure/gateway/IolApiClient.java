@@ -178,8 +178,7 @@ public class IolApiClient {
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            log.warn("IOL returned non-success status: {}", response.getStatusCode());
-            return List.of();
+            throw new RuntimeException("IOL panel quotes returned non-success status " + response.getStatusCode() + " for market " + market);
         }
 
         JsonNode titulos = response.getBody().get("titulos");
