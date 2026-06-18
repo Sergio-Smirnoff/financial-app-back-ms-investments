@@ -162,7 +162,7 @@ public class IolApiClient {
             return getPanelQuotesInternal(market);
         } catch (Exception ex) {
             log.error("Critical error fetching panel quotes for {}: {}", market, ex.getMessage());
-            return List.of();
+            throw new RuntimeException("IOL panel quotes fetch failed for " + market, ex);
         }
     }
 
@@ -178,8 +178,7 @@ public class IolApiClient {
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            log.warn("IOL returned non-success status: {}", response.getStatusCode());
-            return List.of();
+            throw new RuntimeException("IOL panel quotes returned non-success status " + response.getStatusCode() + " for market " + market);
         }
 
         JsonNode titulos = response.getBody().get("titulos");

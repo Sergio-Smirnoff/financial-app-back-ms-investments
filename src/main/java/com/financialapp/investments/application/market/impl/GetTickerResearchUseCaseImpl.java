@@ -1,6 +1,7 @@
 package com.financialapp.investments.application.market.impl;
 
 import com.financialapp.investments.domain.gateway.IolGateway;
+import com.financialapp.investments.domain.model.history.PriceSeries;
 import com.financialapp.investments.domain.usecase.market.GetTickerResearchUseCase;
 import com.financialapp.investments.domain.usecase.market.command.GetTickerResearchCommand;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
@@ -23,7 +24,7 @@ public class GetTickerResearchUseCaseImpl implements GetTickerResearchUseCase {
         return new TickerResearchResult(
                 command.ticker(),
                 iolGateway.getPrice(command.ticker(), command.assetType()),
-                iolGateway.getHistoricalSeries(command.ticker(), command.assetType(),
-                        command.range().from(today), command.range().to(today)));
+                new PriceSeries(iolGateway.getHistoricalSeries(command.ticker(), command.assetType(),
+                        command.range().from(today), command.range().to(today))));
     }
 }

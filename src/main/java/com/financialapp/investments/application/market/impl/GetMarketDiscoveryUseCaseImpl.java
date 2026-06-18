@@ -1,6 +1,7 @@
 package com.financialapp.investments.application.market.impl;
 
 import com.financialapp.investments.domain.usecase.market.command.GetMarketDiscoveryCommand;
+import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
 import com.financialapp.investments.domain.usecase.market.GetMarketDiscoveryUseCase;
 import com.financialapp.investments.domain.model.holding.Holding;
@@ -27,14 +28,15 @@ public class GetMarketDiscoveryUseCaseImpl implements GetMarketDiscoveryUseCase 
     private final HoldingRepository holdingRepository;
 
     @Override
-    public List<MarketOpportunityResult> execute(GetMarketDiscoveryCommand command) {
+    public MarketDiscoveryResult execute(GetMarketDiscoveryCommand command) {
         Set<Ticker> ownedTickers = holdingRepository.findByUserId(command.userId())
                 .stream()
                 .map(Holding::ticker)
                 .collect(Collectors.toSet());
 
-        return marketQuoteRepository.findAll()
-                .stream()
+        List<MarketQuote> allQuotes = marketQuoteRepository.findAll();
+
+        List<MarketOpportunityResult> opportunities = allQuotes.stream()
                 .filter(q -> !ownedTickers.contains(q.ticker()))
                 .sorted(Comparator.comparing(
                         (MarketQuote q) -> q.variation() != null
@@ -44,5 +46,7 @@ public class GetMarketDiscoveryUseCaseImpl implements GetMarketDiscoveryUseCase 
                 .limit(command.limit())
                 .map(q -> new MarketOpportunityResult(q.ticker(), q.price(), q.variation(), q.volume()))
                 .toList();
+
+        return new MarketDiscoveryResult(!allQuotes.isEmpty(), opportunities);
     }
 }

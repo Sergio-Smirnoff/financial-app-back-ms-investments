@@ -16,7 +16,11 @@ public class MarketDiscoveryScheduler {
     @Scheduled(fixedRateString = "${iol.discovery-refresh-rate:900000}")
     public void syncMarketQuotes() {
         log.info("Starting scheduled sync of market panel quotes");
-        syncMarketQuotesUseCase.execute();
-        log.info("Market panel quotes sync completed");
+        try {
+            syncMarketQuotesUseCase.execute();
+            log.info("Market panel quotes sync completed");
+        } catch (RuntimeException ex) {
+            log.error("Market panel quotes sync FAILED; keeping last cached quotes: {}", ex.getMessage());
+        }
     }
 }
