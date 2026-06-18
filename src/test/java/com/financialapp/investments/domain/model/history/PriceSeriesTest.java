@@ -32,4 +32,11 @@ class PriceSeriesTest {
     void rejectsNullPoints() {
         assertThatThrownBy(() -> new PriceSeries(null)).isInstanceOf(NullPointerException.class);
     }
+
+    @Test
+    void emptyInputProducesEmptySeries() {
+        PriceSeries series = new PriceSeries(List.of());
+        assertThat(series.isEmpty()).isTrue();
+        assertThat(series.points()).isEmpty();
+    }
 }

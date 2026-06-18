@@ -25,7 +25,7 @@ public record PriceSeries(List<HistoricalPricePoint> points) {
                         point -> point,
                         (a, b) -> a.pricedAt().isAfter(b.pricedAt()) ? a : b));
         return latestPerDay.values().stream()
-                .sorted(Comparator.comparing(HistoricalPricePoint::pricedAt))
+                .sorted(Comparator.comparing(point -> point.pricedAt().toLocalDate()))
                 .toList();
     }
 }
