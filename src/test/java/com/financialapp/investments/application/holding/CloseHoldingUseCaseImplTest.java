@@ -48,6 +48,8 @@ class CloseHoldingUseCaseImplTest {
     private FinancesGateway financesGateway;
     @Mock
     private DomainEventPublisher eventPublisher;
+    @Mock
+    private com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @InjectMocks
     private CloseHoldingUseCaseImpl useCase;

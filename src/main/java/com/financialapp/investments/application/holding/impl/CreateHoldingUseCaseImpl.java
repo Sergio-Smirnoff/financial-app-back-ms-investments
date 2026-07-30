@@ -22,13 +22,21 @@ public class CreateHoldingUseCaseImpl implements CreateHoldingUseCase {
     private final HoldingRepository holdingRepository;
     private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
+    private final com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @Override
     public Holding execute(CreateHoldingCommand command) {
         Money totalCost = command.avgPurchasePrice().multiply(command.quantity().value());
 
+        com.financialapp.investments.domain.model.fee.BrokerFeeSchedule schedule = brokerFeeScheduleRepository
+                .findFor(command.bankNumber(), command.assetType())
+                .orElse(null);
+        com.financialapp.investments.domain.service.BrokerFeeNetting feeNetting = new com.financialapp.investments.domain.service.BrokerFeeNetting();
+        com.financialapp.investments.domain.model.fee.NetPositionResult buyNet = feeNetting.apply(totalCost, totalCost, schedule, com.financialapp.investments.domain.model.fee.TradeSide.BUY);
+        Money bookedAmount = buyNet.totalFee().amount().compareTo(java.math.BigDecimal.ZERO) > 0 ? totalCost.add(buyNet.totalFee()) : totalCost;
+
         if (command.fundingCbu() != null) {
-            financesGateway.recordPurchase(command.userId(), command.fundingCbu(), totalCost);
+            financesGateway.recordPurchase(command.userId(), command.fundingCbu(), bookedAmount);
         }
 
         Holding holding = Holding.create(

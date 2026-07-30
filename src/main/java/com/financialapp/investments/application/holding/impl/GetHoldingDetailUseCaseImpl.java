@@ -21,6 +21,7 @@ public class GetHoldingDetailUseCaseImpl implements GetHoldingDetailUseCase {
 
     private final HoldingRepository holdingRepository;
     private final AssetPriceRepository assetPriceRepository;
+    private final com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @Override
     public HoldingWithPriceResult execute(GetHoldingDetailCommand command) {
@@ -33,18 +34,43 @@ public class GetHoldingDetailUseCaseImpl implements GetHoldingDetailUseCase {
                 .map(ap -> ap.lastPrice())
                 .orElse(holding.avgPurchasePrice().amount());
 
-        return computeResult(holding, currentPrice);
+        com.financialapp.investments.domain.model.fee.BrokerFeeSchedule schedule = brokerFeeScheduleRepository
+                .findFor(holding.bankNumber(), holding.assetType())
+                .orElse(null);
+
+        return computeResult(holding, currentPrice, schedule);
     }
 
-    private static HoldingWithPriceResult computeResult(Holding holding, BigDecimal currentPrice) {
+    private static HoldingWithPriceResult computeResult(
+            Holding holding,
+            BigDecimal currentPrice,
+            com.financialapp.investments.domain.model.fee.BrokerFeeSchedule schedule) {
+
         BigDecimal quantity = holding.quantity().value();
         BigDecimal avgPrice = holding.avgPurchasePrice().amount();
-        BigDecimal currentValue = currentPrice.multiply(quantity);
-        BigDecimal costBasis = avgPrice.multiply(quantity);
-        BigDecimal plAmount = currentValue.subtract(costBasis);
-        BigDecimal plPercent = costBasis.compareTo(BigDecimal.ZERO) != 0
-                ? plAmount.divide(costBasis, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+        String currency = holding.avgPurchasePrice().currency().getCurrencyCode();
+
+        com.financialapp.investments.domain.common.model.Money costBasisMoney = com.financialapp.investments.domain.common.model.Money.of(avgPrice.multiply(quantity), currency);
+        com.financialapp.investments.domain.common.model.Money currentValueMoney = com.financialapp.investments.domain.common.model.Money.of(currentPrice.multiply(quantity), currency);
+
+        com.financialapp.investments.domain.service.BrokerFeeNetting feeNetting = new com.financialapp.investments.domain.service.BrokerFeeNetting();
+
+        com.financialapp.investments.domain.model.fee.NetPositionResult buyNet = feeNetting.apply(costBasisMoney, costBasisMoney, schedule, com.financialapp.investments.domain.model.fee.TradeSide.BUY);
+        com.financialapp.investments.domain.common.model.Money netCostBasis = buyNet.totalFee().amount().compareTo(BigDecimal.ZERO) > 0
+                ? costBasisMoney.add(buyNet.totalFee())
+                : costBasisMoney;
+
+        com.financialapp.investments.domain.model.fee.NetPositionResult sellNet = feeNetting.apply(currentValueMoney, currentValueMoney, schedule, com.financialapp.investments.domain.model.fee.TradeSide.SELL);
+        com.financialapp.investments.domain.common.model.Money netCurrentValue = sellNet.feeExceedsGross()
+                ? com.financialapp.investments.domain.common.model.Money.zero(currency)
+                : sellNet.netMagnitude();
+
+        BigDecimal plAmount = netCurrentValue.amount().subtract(netCostBasis.amount());
+        BigDecimal costBasisVal = netCostBasis.amount();
+        BigDecimal plPercent = costBasisVal.compareTo(BigDecimal.ZERO) != 0
+                ? plAmount.divide(costBasisVal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
                 : BigDecimal.ZERO;
-        return new HoldingWithPriceResult(holding, currentPrice, currentValue, plAmount, plPercent);
+
+        return new HoldingWithPriceResult(holding, currentPrice, currentValueMoney.amount(), plAmount, plPercent);
     }
 }
