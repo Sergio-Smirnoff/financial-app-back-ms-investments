@@ -6,8 +6,13 @@ import com.financialapp.investments.domain.usecase.market.response.TickerResearc
 import com.financialapp.investments.domain.usecase.market.response.TickerSearchResult;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
 import com.financialapp.investments.web.dto.response.TickerResearchResponse;
-import com.financialapp.investments.web.dto.response.TickerSearchResponse;
+import com.financialapp.investments.domain.model.market.MarketIndex;
+import com.financialapp.investments.domain.model.market.MarketQuote;
+import com.financialapp.investments.domain.usecase.market.GetMarketPanelUseCase;
+import com.financialapp.investments.web.dto.response.*;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 import static com.financialapp.investments.web.mapper.BigDecimals.toPlain;
 
@@ -51,5 +56,32 @@ public class MarketWebMapper {
                                 .build())
                         .toList())
                 .build();
+    }
+
+    public MarketIndexResponse toIndexResponse(com.financialapp.investments.domain.model.market.MarketIndex index) {
+        if (index == null) return null;
+        return new MarketIndexResponse(
+                index.code(),
+                index.value() != null ? index.value().toPlainString() : null,
+                index.variation() != null ? index.variation().toPlainString() : null
+        );
+    }
+
+    public com.financialapp.investments.web.dto.response.MarketQuotePanelResponse toQuotePanelResponse(com.financialapp.investments.domain.model.market.MarketQuote quote) {
+        if (quote == null) return null;
+        return new com.financialapp.investments.web.dto.response.MarketQuotePanelResponse(
+                quote.ticker().value(),
+                quote.price() != null ? quote.price().amount().toPlainString() : null,
+                quote.variation() != null ? quote.variation().toPlainString() : null
+        );
+    }
+
+    public com.financialapp.investments.web.dto.response.MarketPanelResponse toPanelResponse(com.financialapp.investments.domain.usecase.market.GetMarketPanelUseCase.MarketPanelResult result) {
+        if (result == null) return null;
+        var quotes = result.quotes().stream().map(this::toQuotePanelResponse).toList();
+        var indices = result.indices().stream().map(this::toIndexResponse).toList();
+        var fxRates = result.fxRates().stream().map(FxRateWebMapper::toResponse).toList();
+
+        return new com.financialapp.investments.web.dto.response.MarketPanelResponse(quotes, indices, fxRates);
     }
 }

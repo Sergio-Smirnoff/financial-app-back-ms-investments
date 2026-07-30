@@ -32,7 +32,15 @@ public class MarketDiscoveryController {
     private final GetMarketDiscoveryUseCase getMarketDiscoveryUseCase;
     private final SearchTickersUseCase searchTickersUseCase;
     private final GetTickerResearchUseCase getTickerResearchUseCase;
+    private final com.financialapp.investments.domain.usecase.market.GetMarketPanelUseCase getMarketPanelUseCase;
     private final MarketWebMapper marketWebMapper;
+
+    @GetMapping("/panel")
+    @Operation(summary = "Get widened market panel containing quotes, indices, and latest FX rates")
+    public ResponseEntity<ApiResponse<com.financialapp.investments.web.dto.response.MarketPanelResponse>> getPanel() {
+        com.financialapp.investments.web.dto.response.MarketPanelResponse response = marketWebMapper.toPanelResponse(getMarketPanelUseCase.execute());
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
 
     @GetMapping("/discovery")
     @Operation(summary = "Get trending assets not in user portfolio")
