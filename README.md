@@ -26,6 +26,12 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 
 **MarketQuote** — panel quote for market discovery (symbol, lastPrice, dailyVariation).
 
+**MarketIndex** — market index points (code, value, variation, updatedAt) for MERVAL, SP500, RIESGO_PAIS.
+
+**FxRate** — exchange rate aggregate (date, view [MEP/CCL/OFICIAL], buy, sell, source [IOL_SYNTHETIC/IOL_DIRECT/MANUAL]).
+
+**BrokerFeeSchedule** — fee schedule per broker bank & asset type (buyFeePct, sellFeePct, minimumFee, marketFeePct, ivaTreatment).
+
 **PortfolioSnapshot** — daily EOD per-user totals (JSONB by currency) for the evolution chart.
 
 **RefreshJob** — tracks in-flight / completed price refresh jobs.
@@ -35,6 +41,7 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 | Scheduler | Trigger | Purpose |
 |---|---|---|
 | `PriceRefreshScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Refresh live prices + evaluate thresholds |
+| `FxRateSyncScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Sync synthetic MEP/CCL and official FX rates |
 | `MarketDiscoveryScheduler` | Fixed-rate `IOL_DISCOVERY_REFRESH_RATE` (default 15 min) | Sync panel quotes |
 | `PortfolioSnapshotScheduler` | Daily midnight | Capture per-user portfolio snapshots |
 
@@ -95,6 +102,23 @@ declare their throwable codes with `@ApiErrorCodes` (generated Swagger examples)
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/v1/investments/market/discovery?limit=` | Trending assets not in the user's portfolio (default limit 5) |
+| `GET` | `/api/v1/investments/market/panel` | Widened market panel containing quotes, indices, and latest FX rates |
+
+### FX Rates — `/api/v1/investments/fx/rates`
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/investments/fx/rates?from=&to=&view=` | Historical persisted FX rates |
+| `GET` | `/api/v1/investments/fx/rates/latest` | Latest persisted FX rate for each view |
+| `GET` | `/api/v1/investments/fx/rates/at?date=` | Computed FX rates passthrough at a specific date |
+| `POST` | `/api/v1/investments/fx/rates/backfill?from=&to=` | Idempotent manual backfill of FX rates |
+
+### Broker Fees — `/api/v1/investments/fees/brokers`
+
+| Method | Path | Purpose |
+|---|---|---|
+| `PUT` | `/api/v1/investments/fees/brokers/{bankNumber}` | Upsert fee schedule for a broker/bank |
+| `GET` | `/api/v1/investments/fees/brokers` | List all broker fee schedules |
 
 All endpoints return `ApiResponse<T>` (`success`, `message`, `data`, `errors`, `timestamp`). Numeric fields serialised as `String` to avoid JSON precision loss.
 
