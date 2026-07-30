@@ -23,6 +23,7 @@ public class FxLegPriceGatewayImpl implements FxLegPriceGateway {
     private final FxPairsProperties fxPairsProperties;
     private final RestTemplate restTemplate;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public FxLegPriceGatewayImpl(IolApiClient iolApiClient, FxPairsProperties fxPairsProperties) {
         this(iolApiClient, fxPairsProperties, new RestTemplate());
     }
