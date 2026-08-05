@@ -8,7 +8,7 @@ import com.financialapp.investments.domain.event.HoldingCreatedEvent;
 import com.financialapp.investments.domain.event.HoldingUpdatedEvent;
 import com.financialapp.investments.domain.event.PriceThresholdBreachedEvent;
 import com.financialapp.investments.domain.common.model.BankNumber;
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.commons.core.domain.model.Cbu;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
 import com.financialapp.investments.domain.model.holding.Ticker;

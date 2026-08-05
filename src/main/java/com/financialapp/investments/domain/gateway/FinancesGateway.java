@@ -1,6 +1,6 @@
 package com.financialapp.investments.domain.gateway;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.commons.core.domain.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 

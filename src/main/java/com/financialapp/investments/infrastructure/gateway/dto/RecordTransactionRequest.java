@@ -1,4 +1,5 @@
 package com.financialapp.investments.infrastructure.gateway.dto;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import java.time.LocalDate;
 

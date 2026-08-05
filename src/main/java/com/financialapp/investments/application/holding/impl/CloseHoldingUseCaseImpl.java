@@ -1,4 +1,5 @@
 package com.financialapp.investments.application.holding.impl;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.CloseHoldingUseCase;

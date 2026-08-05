@@ -1,4 +1,5 @@
 package com.financialapp.investments.domain.common.model;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import org.junit.jupiter.api.Test;
 

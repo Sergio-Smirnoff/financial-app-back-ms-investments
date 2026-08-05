@@ -1,6 +1,6 @@
 package com.financialapp.investments.infrastructure.gateway.impl;
 
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.commons.core.domain.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.exception.FinancesServiceException;
