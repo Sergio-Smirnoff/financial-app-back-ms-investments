@@ -16,6 +16,7 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 | GET | `/api/v1/investments/portfolio/holdings` | List holdings enriched with live prices and P&L % | — |
 | GET | `/api/v1/investments/portfolio/holdings/{id}` | Single holding detail with live price and P&L % | `resource_not_found` |
 | GET | `/api/v1/investments/portfolio/evolution` | Historical portfolio value evolution chart (`?days=`) | `invalid_date_range` |
+| GET | `/api/v1/investments/positions/search` | Search user positions by ticker or name (`?q=`) | — |
 | POST | `/api/v1/investments/prices/refresh` | Trigger full price refresh for all active tickers | `iol_service_unavailable` |
 | GET | `/api/v1/investments/prices/history/{ticker}` | OHLC price history for a ticker (`?from=&to=`) | `resource_not_found`, `invalid_date_range` |
 | GET | `/api/v1/investments/market/discovery` | Trending market opportunities not in portfolio (`?limit=`) | `iol_service_unavailable` |
