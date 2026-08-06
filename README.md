@@ -85,6 +85,12 @@ declare their throwable codes with `@ApiErrorCodes` (generated Swagger examples)
 | `GET` | `/api/v1/investments/portfolio/holdings/{holdingId}` | Single holding detail with current price and P&L |
 | `GET` | `/api/v1/investments/portfolio/evolution?days=` | Historical portfolio evolution (ARS + USD) for N days |
 
+### Positions — `/api/v1/investments/positions`
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/investments/positions/search?q=` | Search user positions by ticker or name |
+
 ### Prices — `/api/v1/investments/prices`
 
 | Method | Path | Purpose |

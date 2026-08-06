@@ -5,13 +5,16 @@ import com.financialapp.investments.domain.usecase.portfolio.response.Allocation
 import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioEvolutionPoint;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioSummaryResult;
+import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.web.dto.response.AllocationBreakdown;
 import com.financialapp.investments.web.dto.response.CurrencyTotalsByDay;
 import com.financialapp.investments.web.dto.response.CurrencyTotalsResponse;
 import com.financialapp.investments.web.dto.response.PortfolioEvolutionResponse;
 import com.financialapp.investments.web.dto.response.PortfolioSummaryResponse;
+import com.financialapp.investments.web.dto.response.PositionSearchResponse;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static com.financialapp.investments.web.mapper.BigDecimals.toPlain;
@@ -34,6 +37,18 @@ public class PortfolioWebMapper {
                         .map(this::toCurrencyTotalsByDay)
                         .toList())
                 .build();
+    }
+
+    public PositionSearchResponse toPositionSearchResponse(Holding holding) {
+        BigDecimal marketValue = holding.avgPurchasePrice().amount().multiply(holding.quantity().value());
+        return new PositionSearchResponse(
+                holding.id() != null ? holding.id().value() : null,
+                holding.ticker().value(),
+                holding.name(),
+                toPlain(holding.quantity().value()),
+                toPlain(marketValue),
+                holding.avgPurchasePrice().currency().getCurrencyCode()
+        );
     }
 
     private CurrencyTotalsResponse toCurrencyTotalsResponse(CurrencyTotals totals) {
