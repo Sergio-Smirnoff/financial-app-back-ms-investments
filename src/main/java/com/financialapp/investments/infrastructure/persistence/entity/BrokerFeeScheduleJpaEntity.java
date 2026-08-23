@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 
@@ -41,6 +43,7 @@ public class BrokerFeeScheduleJpaEntity {
     @Column(name = "iva_treatment", length = 10, nullable = false)
     private String ivaTreatment;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "currency", length = 3, nullable = false)
     private String currency;
 }
