@@ -1,4 +1,5 @@
 package com.financialapp.investments.web.dto.request;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import jakarta.validation.constraints.*;
 import lombok.Getter;

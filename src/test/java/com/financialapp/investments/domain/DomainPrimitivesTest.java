@@ -3,7 +3,7 @@ package com.financialapp.investments.domain;
 import com.financialapp.investments.domain.common.model.PageRequest;
 import com.financialapp.investments.domain.common.model.PageResult;
 import com.financialapp.investments.domain.common.model.UserId;
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.commons.core.domain.model.Cbu;
 import com.financialapp.investments.domain.event.Direction;
 import com.financialapp.commons.core.error.ErrorCategory;
 import com.financialapp.investments.domain.exception.DomainError;

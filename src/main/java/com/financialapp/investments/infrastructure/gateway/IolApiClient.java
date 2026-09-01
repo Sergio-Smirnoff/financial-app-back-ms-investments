@@ -126,15 +126,15 @@ public class IolApiClient {
 
         for (JsonNode item : body) {
             // seriehistorica uses same structure as CotizacionDetalle: ultimoPrecio + fechaHora
-            JsonNode fechaNode = item.get("fechaHora");
+            JsonNode dateNode = item.get("fechaHora");
             JsonNode priceNode = item.get("ultimoPrecio");
-            if (fechaNode == null || fechaNode.isNull() || priceNode == null || priceNode.isNull()) {
+            if (dateNode == null || dateNode.isNull() || priceNode == null || priceNode.isNull()) {
                 log.debug("Skipping item missing fechaHora/ultimoPrecio: {}", item);
                 continue;
             }
 
             // Trim to 19 chars to strip timezone offset (e.g. "2026-04-14T17:00:00-03:00")
-            LocalDateTime pricedAt = LocalDateTime.parse(fechaNode.asText().substring(0, 19),
+            LocalDateTime pricedAt = LocalDateTime.parse(dateNode.asText().substring(0, 19),
                     DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
 
             IolPriceDetail detail = new IolPriceDetail(
@@ -162,7 +162,7 @@ public class IolApiClient {
             return getPanelQuotesInternal(market);
         } catch (Exception ex) {
             log.error("Critical error fetching panel quotes for {}: {}", market, ex.getMessage());
-            return List.of();
+            throw new RuntimeException("IOL panel quotes fetch failed for " + market, ex);
         }
     }
 
@@ -178,8 +178,7 @@ public class IolApiClient {
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            log.warn("IOL returned non-success status: {}", response.getStatusCode());
-            return List.of();
+            throw new RuntimeException("IOL panel quotes returned non-success status " + response.getStatusCode() + " for market " + market);
         }
 
         JsonNode titulos = response.getBody().get("titulos");

@@ -8,7 +8,7 @@
         <groupId>com.financialapp</groupId>
         <artifactId>financial-app-parent</artifactId>
         <version>1.0.0</version>
-        <relativePath>../financial-app-back-financial-app-parent/pom.xml</relativePath>
+        <relativePath>../financial-app-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>ms-investments</artifactId>

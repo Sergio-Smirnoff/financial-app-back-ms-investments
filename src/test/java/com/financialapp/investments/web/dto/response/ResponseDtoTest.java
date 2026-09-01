@@ -50,11 +50,14 @@ class ResponseDtoTest {
         assertThat(hw.getId()).isEqualTo(1L);
         assertThat(hw.getCurrentPrice()).isEqualTo("100");
 
+        MarketDiscoveryResponse.Opportunity opp = MarketDiscoveryResponse.Opportunity.builder()
+                .ticker("X").price("1").currency("ARS").variation("1").volume("1").build();
         MarketDiscoveryResponse m = MarketDiscoveryResponse.builder()
-                .ticker("X").price("1").currency("ARS")
-                .variation("1").volume("1").build();
-        assertThat(m.getTicker()).isEqualTo("X");
-        assertThat(m.getPrice()).isEqualTo("1");
+                .marketDataAvailable(true).opportunities(List.of(opp)).build();
+        assertThat(m.isMarketDataAvailable()).isTrue();
+        assertThat(m.getOpportunities()).hasSize(1);
+        assertThat(m.getOpportunities().get(0).getTicker()).isEqualTo("X");
+        assertThat(m.getOpportunities().get(0).getPrice()).isEqualTo("1");
 
         PortfolioEvolutionResponse e = PortfolioEvolutionResponse.builder()
                 .date(LocalDate.now()).totals(List.of()).build();

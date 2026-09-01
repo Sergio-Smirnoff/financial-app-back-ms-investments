@@ -1,4 +1,5 @@
 package com.financialapp.investments.application.holding.impl;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.CloseHoldingUseCase;
@@ -25,6 +26,7 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
     private final AssetPriceRepository assetPriceRepository;
     private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
+    private final com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @Override
     public void execute(CloseHoldingCommand command) {
@@ -39,8 +41,15 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
 
         Money proceeds = unitPrice.multiply(holding.quantity().value());
 
+        com.financialapp.investments.domain.model.fee.BrokerFeeSchedule schedule = brokerFeeScheduleRepository
+                .findFor(holding.bankNumber(), holding.assetType())
+                .orElse(null);
+        com.financialapp.investments.domain.service.BrokerFeeNetting feeNetting = new com.financialapp.investments.domain.service.BrokerFeeNetting();
+        com.financialapp.investments.domain.model.fee.NetPositionResult sellNet = feeNetting.apply(proceeds, proceeds, schedule, com.financialapp.investments.domain.model.fee.TradeSide.SELL);
+        Money bookedAmount = sellNet.feeExceedsGross() ? Money.zero(proceeds.currency().getCurrencyCode()) : sellNet.netMagnitude();
+
         if (command.destinationCbu() != null) {
-            financesGateway.recordSaleProceeds(command.userId(), command.destinationCbu(), proceeds);
+            financesGateway.recordSaleProceeds(command.userId(), command.destinationCbu(), bookedAmount);
         }
 
         holdingRepository.delete(holding.id());

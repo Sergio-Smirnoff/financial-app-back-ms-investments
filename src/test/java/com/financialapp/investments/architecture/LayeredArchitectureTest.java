@@ -1,4 +1,4 @@
-package com.financialapp.investments;
+package com.financialapp.investments.architecture;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -9,7 +9,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 @AnalyzeClasses(packages = "com.financialapp.investments", importOptions = ImportOption.DoNotIncludeTests.class)
-class ArchitectureTest {
+class LayeredArchitectureTest {
 
     // --- domain purity (spec §14) ---
 

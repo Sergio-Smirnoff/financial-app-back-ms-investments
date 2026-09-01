@@ -10,11 +10,11 @@ public final class IolCurrencyResolver {
     private IolCurrencyResolver() {
     }
 
-    public static String resolve(String moneda) {
-        if (moneda == null || moneda.isBlank()) {
+    public static String resolve(String currency) {
+        if (currency == null || currency.isBlank()) {
             return ARS;
         }
-        String normalized = moneda.toLowerCase(Locale.ROOT);
+        String normalized = currency.toLowerCase(Locale.ROOT);
         if (normalized.contains("dolar")) {
             return USD;
         }

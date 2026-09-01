@@ -37,6 +37,8 @@ class GetHoldingDetailUseCaseImplTest {
     private HoldingRepository holdingRepository;
     @Mock
     private AssetPriceRepository assetPriceRepository;
+    @Mock
+    private com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @InjectMocks
     private GetHoldingDetailUseCaseImpl useCase;

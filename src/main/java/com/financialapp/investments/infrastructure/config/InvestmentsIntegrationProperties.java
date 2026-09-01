@@ -1,4 +1,5 @@
 package com.financialapp.investments.infrastructure.config;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import lombok.Getter;
 import lombok.Setter;

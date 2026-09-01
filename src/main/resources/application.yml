@@ -53,6 +53,15 @@ iol:
   password: ${IOL_PASSWORD:?IOL_PASSWORD must be set}
   price-refresh-cron: ${IOL_PRICE_REFRESH_CRON:0 */15 10-17 * * MON-FRI}
 
+fx:
+  pairs:
+    mep-ars-ticker: ${FX_MEP_ARS_TICKER:AL30}
+    mep-usd-ticker: ${FX_MEP_USD_TICKER:AL30D}
+    ccl-ars-ticker: ${FX_CCL_ARS_TICKER:AL30}
+    ccl-usd-ticker: ${FX_CCL_USD_TICKER:AL30C}
+  oficial:
+    bcra-url: ${BCRA_OFICIAL_URL:https://api.bcra.gob.ar/estadisticas/v3.0/Moneda}
+
 finances:
   service:
     url: ${FINANCES_SERVICE_URL:http://localhost:8082}

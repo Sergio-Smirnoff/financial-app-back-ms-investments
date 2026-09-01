@@ -2,7 +2,7 @@ package com.financialapp.investments.application.holding;
 
 import com.financialapp.investments.application.holding.impl.CreateHoldingUseCaseImpl;
 import com.financialapp.investments.domain.common.model.BankNumber;
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.commons.core.domain.model.Cbu;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.event.HoldingCreatedEvent;
@@ -41,6 +41,8 @@ class CreateHoldingUseCaseImplTest {
     private FinancesGateway financesGateway;
     @Mock
     private DomainEventPublisher eventPublisher;
+    @Mock
+    private com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @InjectMocks
     private CreateHoldingUseCaseImpl useCase;

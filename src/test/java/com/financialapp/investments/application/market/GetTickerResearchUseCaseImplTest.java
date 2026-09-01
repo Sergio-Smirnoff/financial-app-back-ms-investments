@@ -64,8 +64,8 @@ class GetTickerResearchUseCaseImplTest {
         assertThat(result.ticker()).isEqualTo(ticker);
         assertThat(result.currentQuote()).isPresent();
         assertThat(result.currentQuote().get()).isEqualTo(quote);
-        assertThat(result.series()).hasSize(1);
-        assertThat(result.series().get(0)).isEqualTo(point);
+        assertThat(result.series().points()).hasSize(1);
+        assertThat(result.series().points().get(0)).isEqualTo(point);
     }
 
     @Test
@@ -77,6 +77,6 @@ class GetTickerResearchUseCaseImplTest {
                 new GetTickerResearchCommand(new Ticker("YPFD"), AssetType.STOCK, PriceRange.D90));
 
         assertThat(result.currentQuote()).isEmpty();
-        assertThat(result.series()).isEmpty();
+        assertThat(result.series().isEmpty()).isTrue();
     }
 }

@@ -1,7 +1,7 @@
 package com.financialapp.investments.web.mapper;
 
 import com.financialapp.investments.domain.common.model.BankNumber;
-import com.financialapp.investments.domain.common.model.Cbu;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
@@ -12,6 +12,8 @@ import com.financialapp.investments.domain.usecase.market.response.TickerSearchR
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.model.history.PriceSeries;
+import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
 import com.financialapp.investments.domain.usecase.market.response.TickerResearchResult;
 import com.financialapp.investments.domain.usecase.portfolio.response.AllocationBreakdownResult;
@@ -218,21 +220,35 @@ class WebMappersTest {
     void marketMapper_toResponse_passesAllFields_asPlainStrings() {
         MarketOpportunityResult o = new MarketOpportunityResult(TIC,
                 Money.of(new BigDecimal("50.00"), "USD"), new BigDecimal("5.00"), new BigDecimal("100"));
-        MarketDiscoveryResponse r = new MarketWebMapper().toResponse(o);
-        assertThat(r.getTicker()).isEqualTo("AAPL");
-        assertThat(r.getPrice()).isEqualTo("50.00");
-        assertThat(r.getCurrency()).isEqualTo("USD");
-        assertThat(r.getVariation()).isEqualTo("5.00");
-        assertThat(r.getVolume()).isEqualTo("100");
+        MarketDiscoveryResult result = new MarketDiscoveryResult(true, List.of(o));
+        MarketDiscoveryResponse r = new MarketWebMapper().toResponse(result);
+        assertThat(r.isMarketDataAvailable()).isTrue();
+        assertThat(r.getOpportunities()).hasSize(1);
+        MarketDiscoveryResponse.Opportunity opp = r.getOpportunities().get(0);
+        assertThat(opp.getTicker()).isEqualTo("AAPL");
+        assertThat(opp.getPrice()).isEqualTo("50.00");
+        assertThat(opp.getCurrency()).isEqualTo("USD");
+        assertThat(opp.getVariation()).isEqualTo("5.00");
+        assertThat(opp.getVolume()).isEqualTo("100");
     }
 
     @Test
     void marketMapper_nullVariation_serialisedAsNull() {
         MarketOpportunityResult o = new MarketOpportunityResult(TIC,
                 Money.of(new BigDecimal("50.00"), "USD"), null, null);
-        MarketDiscoveryResponse r = new MarketWebMapper().toResponse(o);
-        assertThat(r.getVariation()).isNull();
-        assertThat(r.getVolume()).isNull();
+        MarketDiscoveryResult result = new MarketDiscoveryResult(true, List.of(o));
+        MarketDiscoveryResponse r = new MarketWebMapper().toResponse(result);
+        assertThat(r.getOpportunities()).hasSize(1);
+        assertThat(r.getOpportunities().get(0).getVariation()).isNull();
+        assertThat(r.getOpportunities().get(0).getVolume()).isNull();
+    }
+
+    @Test
+    void marketMapper_toResponse_unavailable_emptyOpportunities() {
+        MarketDiscoveryResult result = new MarketDiscoveryResult(false, List.of());
+        MarketDiscoveryResponse r = new MarketWebMapper().toResponse(result);
+        assertThat(r.isMarketDataAvailable()).isFalse();
+        assertThat(r.getOpportunities()).isEmpty();
     }
 
     @Test
@@ -263,7 +279,7 @@ class WebMappersTest {
                 new BigDecimal("150.00"), new BigDecimal("143.00"),
                 new BigDecimal("900"), new BigDecimal("2.00"), "USD",
                 NOW.minusDays(1));
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(detail), List.of(point));
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(detail), new PriceSeries(List.of(point)));
         TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isEqualTo("USD");
@@ -276,7 +292,7 @@ class WebMappersTest {
 
     @Test
     void marketMapper_toResearchResponse_emptyQuote_nullsCurrentPriceFields() {
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.empty(), List.of());
+        TickerResearchResult result = new TickerResearchResult(TIC, Optional.empty(), new PriceSeries(List.of()));
         TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isNull();
