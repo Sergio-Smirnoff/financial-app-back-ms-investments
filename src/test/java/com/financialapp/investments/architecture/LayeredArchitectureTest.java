@@ -7,9 +7,27 @@ import com.tngtech.archunit.lang.ArchRule;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 @AnalyzeClasses(packages = "com.financialapp.investments", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayeredArchitectureTest {
+
+    // --- inward dependency flow ---
+
+    @ArchTest
+    static final ArchRule layers_respect_inward_dependency_flow = layeredArchitecture()
+            .consideringOnlyDependenciesInLayers()
+            .layer("Domain").definedBy("..investments.domain..")
+            .layer("Application").definedBy("..investments.application..")
+            .layer("Web").definedBy("..investments.web..")
+            .layer("Infrastructure").definedBy("..investments.infrastructure..")
+            // Domain is the core: accessed by everyone, depends on no other layer.
+            .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Web", "Infrastructure")
+            // Application orchestrates domain; only adapters (web/infra) drive it.
+            .whereLayer("Application").mayOnlyBeAccessedByLayers("Web", "Infrastructure")
+            // Web and Infrastructure are outermost: nothing else imports them.
+            .whereLayer("Web").mayNotBeAccessedByAnyLayer()
+            .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer();
 
     // --- domain purity (spec §14) ---
 
