@@ -1,8 +1,10 @@
 package com.financialapp.investments.domain.exception;
 
-public class InvalidFxRateException extends RuntimeException {
+import com.financialapp.commons.core.error.DomainException;
+
+public class InvalidFxRateException extends DomainException {
 
     public InvalidFxRateException(String message) {
-        super(message);
+        super(DomainError.INVALID_FX_RATE, message);
     }
 }
