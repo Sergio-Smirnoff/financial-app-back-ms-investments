@@ -11,6 +11,8 @@ public enum DomainError implements ErrorCode {
     HOLDING_QUANTITY_INVALID(ErrorCategory.UNPROCESSABLE, "holding_quantity_invalid"),
     HOLDING_CURRENCY_MISMATCH(ErrorCategory.UNPROCESSABLE, "holding_currency_mismatch"),
     UNSUPPORTED_CURRENCY(ErrorCategory.UNPROCESSABLE, "unsupported_currency"),
+    INVALID_BANK_NUMBER(ErrorCategory.BAD_REQUEST, "invalid_bank_number"),
+    INVALID_FX_RATE(ErrorCategory.BAD_REQUEST, "invalid_fx_rate"),
     IOL_SERVICE_UNAVAILABLE(ErrorCategory.INTERNAL_SERVER_ERROR, "iol_service_unavailable"),
     FINANCES_SERVICE_UNAVAILABLE(ErrorCategory.INTERNAL_SERVER_ERROR, "finances_service_unavailable"),
     BANKS_SERVICE_UNAVAILABLE(ErrorCategory.INTERNAL_SERVER_ERROR, "banks_service_unavailable"),
