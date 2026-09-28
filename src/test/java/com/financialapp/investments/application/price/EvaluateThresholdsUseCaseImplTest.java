@@ -146,6 +146,42 @@ class EvaluateThresholdsUseCaseImplTest {
         verifyNoInteractions(eventPublisher);
     }
 
+    @Test
+    void bondQuotedPerHundredNominal_doesNotLookLikeAHugeGain() {
+        when(holdingQueryGateway.findWithThresholds()).thenReturn(List.of(ao29WithTenPercentGainThreshold()));
+        when(assetPriceRepository.findAllByTickerIn(any(Set.class)))
+                .thenReturn(List.of(assetPrice("AO29", new BigDecimal("131700"))));
+
+        useCase.execute();
+
+        verify(eventPublisher, never()).publish(any());
+    }
+
+    @Test
+    void bondBreachReportsThePricePerNominal() {
+        when(holdingQueryGateway.findWithThresholds()).thenReturn(List.of(ao29WithTenPercentGainThreshold()));
+        when(assetPriceRepository.findAllByTickerIn(any(Set.class)))
+                .thenReturn(List.of(assetPrice("AO29", new BigDecimal("160000"))));
+
+        useCase.execute();
+
+        ArgumentCaptor<PriceThresholdBreachedEvent> captor = ArgumentCaptor.forClass(PriceThresholdBreachedEvent.class);
+        verify(eventPublisher).publish(captor.capture());
+        assertThat(captor.getValue().currentPrice().amount()).isEqualByComparingTo("1600.00");
+        assertThat(captor.getValue().avgPurchasePrice().amount()).isEqualByComparingTo("1435.78");
+        assertThat(captor.getValue().actualPct()).isEqualByComparingTo("11.44");
+    }
+
+    private static Holding ao29WithTenPercentGainThreshold() {
+        return new Holding(new HoldingId(2L), USER_ID, new BankNumber("017"),
+                new Ticker("AO29"), "Bono 2029", AssetType.BOND,
+                new HoldingQuantity(new BigDecimal("687")),
+                Money.of(new BigDecimal("1435.78"), "ARS"),
+                new ThresholdConfig(new BigDecimal("10"), null),
+                NotificationTimestamps.empty(),
+                LocalDateTime.now(), LocalDateTime.now());
+    }
+
     private static Holding holdingWithGainThreshold(String ticker, BigDecimal avgPrice, BigDecimal gainPct) {
         return new Holding(new HoldingId(1L), USER_ID, new BankNumber("007"),
                 new Ticker(ticker), "Test", AssetType.STOCK,

@@ -132,6 +132,41 @@ class CloseHoldingUseCaseImplTest {
         assertThat(eventCaptor.getValue().destinationCbu()).isNull();
     }
 
+    @Test
+    void close_booksBondProceedsPerHundredNominal() {
+        Holding ao29 = new Holding(new HoldingId(43L), USER_ID, new BankNumber("017"),
+                new Ticker("AO29"), "Bono 2029", AssetType.BOND,
+                new HoldingQuantity(new BigDecimal("687")), Money.of(new BigDecimal("1435.78"), "ARS"),
+                ThresholdConfig.disabled(), NotificationTimestamps.empty(),
+                LocalDateTime.now(), LocalDateTime.now());
+        when(holdingRepository.findByIdAndUserId(ao29.id(), USER_ID)).thenReturn(Optional.of(ao29));
+        when(assetPriceRepository.findByTicker(new Ticker("AO29")))
+                .thenReturn(Optional.of(assetPrice("AO29", new BigDecimal("131700"))));
+
+        useCase.execute(new CloseHoldingCommand(USER_ID, ao29.id(), DESTINATION_CBU));
+
+        ArgumentCaptor<Money> proceeds = ArgumentCaptor.forClass(Money.class);
+        verify(financesGateway).recordSaleProceeds(eq(USER_ID), eq(DESTINATION_CBU), proceeds.capture());
+        assertThat(proceeds.getValue().amount()).isEqualByComparingTo("904779.00");
+    }
+
+    @Test
+    void close_bondWithoutAPriceBooksItsCost() {
+        Holding ao29 = new Holding(new HoldingId(44L), USER_ID, new BankNumber("017"),
+                new Ticker("AO29"), "Bono 2029", AssetType.BOND,
+                new HoldingQuantity(new BigDecimal("687")), Money.of(new BigDecimal("1435.78"), "ARS"),
+                ThresholdConfig.disabled(), NotificationTimestamps.empty(),
+                LocalDateTime.now(), LocalDateTime.now());
+        when(holdingRepository.findByIdAndUserId(ao29.id(), USER_ID)).thenReturn(Optional.of(ao29));
+        when(assetPriceRepository.findByTicker(any(Ticker.class))).thenReturn(Optional.empty());
+
+        useCase.execute(new CloseHoldingCommand(USER_ID, ao29.id(), DESTINATION_CBU));
+
+        ArgumentCaptor<Money> proceeds = ArgumentCaptor.forClass(Money.class);
+        verify(financesGateway).recordSaleProceeds(eq(USER_ID), eq(DESTINATION_CBU), proceeds.capture());
+        assertThat(proceeds.getValue().amount()).isEqualByComparingTo("986380.86");
+    }
+
     private static Holding holding(String ticker, BigDecimal quantity, BigDecimal avgPrice) {
         return new Holding(new HoldingId(42L), USER_ID, new BankNumber("007"),
                 new Ticker(ticker), "Test Holding", AssetType.STOCK,
