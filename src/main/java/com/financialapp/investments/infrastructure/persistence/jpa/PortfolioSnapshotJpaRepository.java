@@ -10,4 +10,6 @@ public interface PortfolioSnapshotJpaRepository extends JpaRepository<PortfolioS
 
     List<PortfolioSnapshotJpaEntity> findByUserIdAndSnapshotDateGreaterThanEqualOrderBySnapshotDateAsc(
             Long userId, LocalDate date);
+
+    boolean existsByUserIdAndSnapshotDate(Long userId, LocalDate snapshotDate);
 }
