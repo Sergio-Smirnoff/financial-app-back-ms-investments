@@ -5,10 +5,12 @@ import com.financialapp.investments.domain.usecase.portfolio.response.Allocation
 import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioEvolutionPoint;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioSummaryResult;
+import com.financialapp.investments.domain.usecase.snapshot.response.EnsureSnapshotResult;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.web.dto.response.AllocationBreakdown;
 import com.financialapp.investments.web.dto.response.CurrencyTotalsByDay;
 import com.financialapp.investments.web.dto.response.CurrencyTotalsResponse;
+import com.financialapp.investments.web.dto.response.EnsuredSnapshotResponse;
 import com.financialapp.investments.web.dto.response.PortfolioEvolutionResponse;
 import com.financialapp.investments.web.dto.response.PortfolioSummaryResponse;
 import com.financialapp.investments.web.dto.response.PositionSearchResponse;
@@ -37,6 +39,10 @@ public class PortfolioWebMapper {
                         .map(this::toCurrencyTotalsByDay)
                         .toList())
                 .build();
+    }
+
+    public EnsuredSnapshotResponse toEnsuredSnapshotResponse(EnsureSnapshotResult result) {
+        return new EnsuredSnapshotResponse(result.created(), result.date());
     }
 
     public PositionSearchResponse toPositionSearchResponse(Holding holding) {
