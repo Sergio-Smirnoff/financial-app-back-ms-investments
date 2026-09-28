@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,17 +43,11 @@ public class GetAccountValuationUseCaseImpl implements GetAccountValuationUseCas
                 .collect(Collectors.toMap(AssetPrice::ticker, AssetPrice::lastPrice, (a, b) -> b));
 
         Money totalValuation = holdings.stream()
-                .map(holding -> unitPrice(holding, priceMap, currencyCode).multiply(holding.quantity().value()))
+                .map(holding -> Optional.ofNullable(priceMap.get(holding.ticker()))
+                        .map(price -> holding.marketValue(Money.of(price, currencyCode)))
+                        .orElseGet(holding::costBasis))
                 .reduce(Money.zero(currencyCode), Money::add);
 
         return new AccountValuationResult(command.bankNumber(), totalValuation, holdings.size());
-    }
-
-    private Money unitPrice(Holding holding, Map<Ticker, BigDecimal> priceMap, String currencyCode) {
-        BigDecimal rawPrice = priceMap.get(holding.ticker());
-        if (rawPrice != null) {
-            return Money.of(rawPrice, currencyCode);
-        }
-        return holding.avgPurchasePrice();
     }
 }

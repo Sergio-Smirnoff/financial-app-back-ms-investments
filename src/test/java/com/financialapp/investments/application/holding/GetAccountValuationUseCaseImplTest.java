@@ -66,6 +66,22 @@ class GetAccountValuationUseCaseImplTest {
         assertThat(r.bankNumber()).isEqualTo(BANK);
     }
 
+    @Test
+    void execute_bondsAreValuedPerHundredNominal() {
+        Holding ao29 = new Holding(new HoldingId(2L), USER, BANK,
+                new Ticker("AO29"), "Bono 2029", AssetType.BOND,
+                new HoldingQuantity(new BigDecimal("687")), Money.of(new BigDecimal("1435.78"), "ARS"),
+                ThresholdConfig.disabled(), NotificationTimestamps.empty(),
+                LocalDateTime.now(), LocalDateTime.now());
+        when(holdingQueryGateway.findByUserIdAndBankNumberAndCurrency(USER, BANK, ARS)).thenReturn(List.of(ao29));
+        when(assetPriceRepository.findAllByTickerIn(any()))
+                .thenReturn(List.of(assetPrice("AO29", new BigDecimal("131700"))));
+
+        AccountValuationResult r = useCase.execute(new GetAccountValuationCommand(USER, BANK, ARS));
+
+        assertThat(r.totalValuation().amount()).isEqualByComparingTo("904779.00");
+    }
+
     private static Holding holding(String ticker, BigDecimal qty, BigDecimal price, String ccy) {
         return new Holding(new HoldingId(1L), USER, BANK,
                 new Ticker(ticker), "n", AssetType.STOCK,
