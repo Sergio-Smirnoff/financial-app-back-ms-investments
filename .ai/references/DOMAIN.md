@@ -19,7 +19,7 @@ Shared VOs (`Money`, `Cbu`, `BankNumber`, `UserId`): parent `.ai/references/APP_
 | `AssetPrice` | Current market price per ticker | `ticker`, `lastPrice`, `openPrice`, `highPrice`, `lowPrice`, `volume`, `dailyVariation` |
 | `AssetPriceHistory` | Historical OHLC snapshot | `ticker`, `lastPrice`, `pricedAt`, filtered to omit zero-price pre-open candles |
 | `MarketQuote` | Market discovery panel item | `symbol`, `lastPrice`, `dailyVariation` |
-| `PortfolioSnapshot` | EOD portfolio valuation snapshot | `userId`, `snapshotDate`, `totalsByCurrency` (JSONB) |
+| `PortfolioSnapshot` | EOD portfolio valuation snapshot | `userId`, `snapshotDate`, `totalsByCurrency` (JSONB); one per user per ART day (V7 UNIQUE(user_id, snapshot_date)), written by the midnight scheduler or ensure-today — a lost race answers created=false |
 | `RefreshJob` | Price refresh execution state | `status`, `startedAt`, `finishedAt` |
 
 ## Value objects

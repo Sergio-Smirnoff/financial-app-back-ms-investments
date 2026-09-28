@@ -21,7 +21,7 @@ ms-investments is REST + IOL broker API driven and **consumes no Kafka events**.
 |---|---|---|
 | `PriceRefreshScheduler.refreshPrices` | `iol.price-refresh-cron` (weekdays 10–17 ARS) | Refreshes OHLC prices via IOL API, updates history, and evaluates threshold alerts |
 | `MarketDiscoveryScheduler.syncMarketPanel` | `iol.discovery-refresh-rate` (default 15m) | Syncs market discovery panel quotes and indices from IOL API |
-| `PortfolioSnapshotScheduler.captureDailySnapshots` | `0 0 0 * * *` (daily midnight) | Captures daily EOD portfolio totals (JSONB by currency) for evolution charts |
+| `PortfolioSnapshotScheduler.captureSnapshots` | `0 0 0 * * *` in `investments.zone` (ART midnight) | Ensures each holder's snapshot for the ART day through the same per-user body as `POST /portfolio/snapshot/ensure-today`; users that already have today's row are skipped, never an error |
 
 ## Outbound calls
 
