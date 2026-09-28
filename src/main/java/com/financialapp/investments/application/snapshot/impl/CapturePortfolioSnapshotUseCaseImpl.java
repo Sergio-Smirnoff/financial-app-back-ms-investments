@@ -11,6 +11,7 @@ import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfoli
 import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioSummaryResult;
 import com.financialapp.investments.domain.usecase.snapshot.CapturePortfolioSnapshotUseCase;
+import com.financialapp.investments.domain.usecase.snapshot.response.SnapshotCaptureResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,9 +30,10 @@ public class CapturePortfolioSnapshotUseCaseImpl implements CapturePortfolioSnap
     private final PortfolioSnapshotRepository snapshotRepository;
 
     @Override
-    public void execute() {
+    public SnapshotCaptureResult execute() {
         List<UserId> userIds = holdingQueryGateway.findDistinctUserIds();
         LocalDate today = LocalDate.now();
+        int failed = 0;
 
         for (UserId userId : userIds) {
             try {
@@ -49,8 +51,10 @@ public class CapturePortfolioSnapshotUseCaseImpl implements CapturePortfolioSnap
                         LocalDateTime.now()
                 ));
             } catch (RuntimeException e) {
+                failed++;
                 log.error("Failed to capture portfolio snapshot for user {}", userId.value(), e);
             }
         }
+        return new SnapshotCaptureResult(userIds.size(), failed);
     }
 }
