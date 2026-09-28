@@ -13,7 +13,7 @@ public class PortfolioSnapshotScheduler {
 
     private final CapturePortfolioSnapshotUseCase capturePortfolioSnapshotUseCase;
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *", zone = "${investments.zone}")
     public void captureSnapshots() {
         log.info("Starting daily portfolio snapshot capture");
         capturePortfolioSnapshotUseCase.execute();

@@ -43,7 +43,7 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 | `PriceRefreshScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Refresh live prices + evaluate thresholds |
 | `FxRateSyncScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Sync synthetic MEP/CCL and official FX rates |
 | `MarketDiscoveryScheduler` | Fixed-rate `IOL_DISCOVERY_REFRESH_RATE` (default 15 min) | Sync panel quotes |
-| `PortfolioSnapshotScheduler` | Daily midnight | Capture per-user portfolio snapshots |
+| `PortfolioSnapshotScheduler` | Daily midnight ART (`investments.zone`) | Ensure one per-user portfolio snapshot for the current ART day |
 
 After each price refresh `EvaluateThresholdsUseCase` checks P&L % against each holding's `ThresholdConfig`. On breach it writes an `investments.threshold.breached` CloudEvent (1.0, binary mode; `data` = `InvestmentThresholdData`) to the `outbox_event` table in the same DB transaction — the commons `OutboxRelay` publishes it to Kafka (consumed by ms-notifications) — and stamps the matching `NotificationTimestamps` field to prevent re-notification.
 
@@ -229,7 +229,10 @@ src/main/java/com/financialapp/investments/
 │       │   ├── RefreshPricesUseCase.java
 │       │   └── command/
 │       └── snapshot/
-│           └── CapturePortfolioSnapshotUseCase.java
+│           ├── CapturePortfolioSnapshotUseCase.java
+│           ├── EnsurePortfolioSnapshotUseCase.java
+│           ├── command/
+│           └── response/
 ├── application/
 │   ├── holding/impl/
 │   ├── market/impl/
@@ -239,6 +242,7 @@ src/main/java/com/financialapp/investments/
 ├── infrastructure/
 │   ├── config/
 │   │   ├── CacheConfig.java
+│   │   ├── ClockConfig.java
 │   │   ├── CurrenciesProperties.java
 │   │   ├── FeignConfig.java
 │   │   ├── InternalAuthFilter.java
