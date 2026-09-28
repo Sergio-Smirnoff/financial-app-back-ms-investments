@@ -1,15 +1,14 @@
 package com.financialapp.investments.application.holding.impl;
-import com.financialapp.commons.core.domain.model.Cbu;
 
-import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
-import com.financialapp.investments.domain.usecase.holding.UpdateHoldingUseCase;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.event.HoldingUpdatedEvent;
 import com.financialapp.investments.domain.exception.ResourceNotFoundException;
-import com.financialapp.investments.domain.model.holding.Holding;
-import com.financialapp.investments.domain.gateway.FinancesGateway;
 import com.financialapp.investments.domain.gateway.DomainEventPublisher;
+import com.financialapp.investments.domain.gateway.FinancesGateway;
+import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.repository.HoldingRepository;
+import com.financialapp.investments.domain.usecase.holding.UpdateHoldingUseCase;
+import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +31,22 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Holding not found: " + command.holdingId().value()));
 
-        Money oldTotalCost = existing.avgPurchasePrice().multiply(existing.quantity().value());
-        Money newTotalCost = command.newAvgPurchasePrice().multiply(command.newQuantity().value());
-        Money costDifference = newTotalCost.subtract(oldTotalCost);
+        Holding updated = new Holding(
+                existing.id(),
+                existing.userId(),
+                command.bankNumber(),
+                command.ticker(),
+                command.name(),
+                command.assetType(),
+                command.newQuantity(),
+                command.newAvgPurchasePrice(),
+                command.thresholdConfig(),
+                existing.notificationTimestamps(),
+                existing.createdAt(),
+                LocalDateTime.now()
+        );
+
+        Money costDifference = updated.costBasis().subtract(existing.costBasis());
 
         if (command.fundingCbu() != null && costDifference.amount().signum() != 0) {
             if (costDifference.amount().signum() > 0) {
@@ -43,21 +55,6 @@ public class UpdateHoldingUseCaseImpl implements UpdateHoldingUseCase {
                 financesGateway.recordSaleProceeds(command.userId(), command.fundingCbu(), costDifference.negate());
             }
         }
-
-        Holding updated = new Holding(
-                existing.id(),
-                existing.userId(),
-                command.bankNumber(),
-                existing.ticker(),
-                command.name(),
-                existing.assetType(),
-                command.newQuantity(),
-                command.newAvgPurchasePrice(),
-                command.thresholdConfig(),
-                existing.notificationTimestamps(),
-                existing.createdAt(),
-                LocalDateTime.now()
-        );
 
         Holding saved = holdingRepository.save(updated);
 
