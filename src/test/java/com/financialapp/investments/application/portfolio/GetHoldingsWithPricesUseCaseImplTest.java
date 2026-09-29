@@ -80,6 +80,42 @@ class GetHoldingsWithPricesUseCaseImplTest {
         assertThat(r.get(0).plPercent()).isEqualByComparingTo("0");
     }
 
+    @Test
+    void execute_bondIsValuedPerHundredNominal() {
+        Holding ao29 = bond("AO29", new BigDecimal("687"), new BigDecimal("1435.78"));
+        when(holdingRepository.findByUserId(USER)).thenReturn(List.of(ao29));
+        when(assetPriceRepository.findAllByTickerIn(any()))
+                .thenReturn(List.of(assetPrice("AO29", new BigDecimal("131700"))));
+
+        HoldingWithPriceResult r = useCase.execute(new GetHoldingsWithPricesCommand(USER)).get(0);
+
+        assertThat(r.currentPrice()).isEqualByComparingTo("131700");
+        assertThat(r.currentValue()).isEqualByComparingTo("904779.00");
+        assertThat(r.plAmount()).isEqualByComparingTo("-81601.86");
+        assertThat(r.plPercent()).isEqualByComparingTo("-8.27");
+    }
+
+    @Test
+    void execute_bondWithoutAPriceIsValuedAtCost() {
+        Holding ao29 = bond("AO29", new BigDecimal("687"), new BigDecimal("1435.78"));
+        when(holdingRepository.findByUserId(USER)).thenReturn(List.of(ao29));
+        when(assetPriceRepository.findAllByTickerIn(any())).thenReturn(List.of());
+
+        HoldingWithPriceResult r = useCase.execute(new GetHoldingsWithPricesCommand(USER)).get(0);
+
+        assertThat(r.currentPrice()).isEqualByComparingTo("1435.78");
+        assertThat(r.currentValue()).isEqualByComparingTo("986380.86");
+        assertThat(r.plAmount()).isEqualByComparingTo("0");
+    }
+
+    private static Holding bond(String ticker, BigDecimal qty, BigDecimal averagePrice) {
+        return new Holding(new HoldingId(2L), USER, new BankNumber("017"),
+                new Ticker(ticker), "Bono", AssetType.BOND,
+                new HoldingQuantity(qty), Money.of(averagePrice, "ARS"),
+                ThresholdConfig.disabled(), NotificationTimestamps.empty(),
+                LocalDateTime.now(), LocalDateTime.now());
+    }
+
     private static Holding holding(String ticker, BigDecimal qty, BigDecimal price) {
         return new Holding(new HoldingId(1L), USER, new BankNumber("007"),
                 new Ticker(ticker), "n", AssetType.STOCK,

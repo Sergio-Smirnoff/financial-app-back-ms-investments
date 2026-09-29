@@ -4,10 +4,16 @@ import com.financialapp.investments.domain.usecase.market.SyncMarketQuotesUseCas
 import com.financialapp.investments.domain.usecase.price.EvaluateThresholdsUseCase;
 import com.financialapp.investments.domain.usecase.price.RefreshPricesUseCase;
 import com.financialapp.investments.domain.usecase.snapshot.CapturePortfolioSnapshotUseCase;
+import com.financialapp.investments.domain.usecase.snapshot.response.SnapshotCaptureResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SchedulerTest {
 
@@ -21,8 +27,20 @@ class SchedulerTest {
     @Test
     void portfolioSnapshotScheduler_delegates() {
         CapturePortfolioSnapshotUseCase uc = Mockito.mock(CapturePortfolioSnapshotUseCase.class);
+        when(uc.execute()).thenReturn(new SnapshotCaptureResult(2, 0));
         new PortfolioSnapshotScheduler(uc).captureSnapshots();
         verify(uc).execute();
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void portfolioSnapshotScheduler_logsAnErrorWithTheFailedCount(CapturedOutput output) {
+        CapturePortfolioSnapshotUseCase uc = Mockito.mock(CapturePortfolioSnapshotUseCase.class);
+        when(uc.execute()).thenReturn(new SnapshotCaptureResult(3, 2));
+
+        new PortfolioSnapshotScheduler(uc).captureSnapshots();
+
+        assertThat(output).contains("ERROR").contains("Portfolio snapshot capture failed for 2 of 3 users");
     }
 
     @Test

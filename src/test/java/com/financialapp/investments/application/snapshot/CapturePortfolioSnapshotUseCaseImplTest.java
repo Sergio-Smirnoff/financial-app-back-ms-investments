@@ -10,6 +10,7 @@ import com.financialapp.investments.domain.usecase.portfolio.GetPortfolioSummary
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioSummaryCommand;
 import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioSummaryResult;
+import com.financialapp.investments.domain.usecase.snapshot.response.SnapshotCaptureResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -43,16 +44,17 @@ class CapturePortfolioSnapshotUseCaseImplTest {
         CurrencyTotals ct = new CurrencyTotals(m, m, m, BigDecimal.ZERO, List.of());
         when(summaryUseCase.execute(any())).thenReturn(new PortfolioSummaryResult(List.of(ct)));
 
-        useCase.execute();
+        SnapshotCaptureResult result = useCase.execute();
 
         ArgumentCaptor<PortfolioSnapshot> cap = ArgumentCaptor.forClass(PortfolioSnapshot.class);
         verify(snapshotRepository, times(2)).save(cap.capture());
         assertThat(cap.getAllValues()).extracting(PortfolioSnapshot::userId).containsExactly(u1, u2);
         assertThat(cap.getAllValues()).allSatisfy(s -> assertThat(s.totals()).hasSize(1));
+        assertThat(result).isEqualTo(new SnapshotCaptureResult(2, 0));
     }
 
     @Test
-    void execute_perUserFailure_swallowed_continuesOthers() {
+    void execute_perUserFailure_isCounted_andOthersContinue() {
         UserId u1 = new UserId(1L);
         UserId u2 = new UserId(2L);
         when(holdingQueryGateway.findDistinctUserIds()).thenReturn(List.of(u1, u2));
@@ -63,8 +65,27 @@ class CapturePortfolioSnapshotUseCaseImplTest {
         when(summaryUseCase.execute(new GetPortfolioSummaryCommand(u2)))
                 .thenReturn(new PortfolioSummaryResult(List.of(ct)));
 
-        useCase.execute();
+        SnapshotCaptureResult result = useCase.execute();
 
         verify(snapshotRepository, times(1)).save(any());
+        assertThat(result).isEqualTo(new SnapshotCaptureResult(2, 1));
+    }
+
+    @Test
+    void execute_aFailingInsertIsCounted_andTheNextUserIsStillSaved() {
+        UserId u1 = new UserId(1L);
+        UserId u2 = new UserId(2L);
+        when(holdingQueryGateway.findDistinctUserIds()).thenReturn(List.of(u1, u2));
+        Money m = Money.of(new BigDecimal("100"), "ARS");
+        CurrencyTotals ct = new CurrencyTotals(m, m, m, BigDecimal.ZERO, List.of());
+        when(summaryUseCase.execute(any())).thenReturn(new PortfolioSummaryResult(List.of(ct)));
+        when(snapshotRepository.save(any()))
+                .thenThrow(new IllegalStateException("column \"totals\" is of type jsonb but expression is of type character varying"))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        SnapshotCaptureResult result = useCase.execute();
+
+        verify(snapshotRepository, times(2)).save(any());
+        assertThat(result).isEqualTo(new SnapshotCaptureResult(2, 1));
     }
 }

@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,12 +57,11 @@ public class EvaluateThresholdsUseCaseImpl implements EvaluateThresholdsUseCase 
             BigDecimal currentPrice = priceMap.get(holding.ticker());
             if (currentPrice == null) continue;
 
-            BigDecimal avgPrice = holding.avgPurchasePrice().amount();
-            if (avgPrice.compareTo(BigDecimal.ZERO) == 0) continue;
+            if (holding.costBasis().amount().signum() == 0) continue;
 
-            BigDecimal plPercent = currentPrice.subtract(avgPrice)
-                    .divide(avgPrice, 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
+            Money quote = new Money(currentPrice, holding.avgPurchasePrice().currency());
+            Money unitPrice = holding.unitPrice(quote);
+            BigDecimal plPercent = holding.valuation(quote).profitAndLossPercent();
 
             ThresholdConfig config = holding.thresholdConfig();
             NotificationTimestamps timestamps = holding.notificationTimestamps();
@@ -76,7 +74,7 @@ public class EvaluateThresholdsUseCaseImpl implements EvaluateThresholdsUseCase 
                     eventPublisher.publish(new PriceThresholdBreachedEvent(
                             holding.id(), holding.userId(), holding.ticker(), holding.name(),
                             Direction.GAIN, config.gainPct(), plPercent,
-                            new Money(currentPrice, holding.avgPurchasePrice().currency()),
+                            unitPrice,
                             holding.avgPurchasePrice(), now
                     ));
                     updated = updated.withGainNotifiedAt(now);
@@ -92,7 +90,7 @@ public class EvaluateThresholdsUseCaseImpl implements EvaluateThresholdsUseCase 
                             holding.id(), holding.userId(), holding.ticker(), holding.name(),
                             Direction.LOSS, config.lossPct(),
                             plPercent.abs(),
-                            new Money(currentPrice, holding.avgPurchasePrice().currency()),
+                            unitPrice,
                             holding.avgPurchasePrice(), now
                     ));
                     updated = updated.withLossNotifiedAt(now);
