@@ -43,7 +43,9 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 | `PriceRefreshScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Refresh live prices + evaluate thresholds |
 | `FxRateSyncScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Sync synthetic MEP/CCL and official FX rates |
 | `MarketDiscoveryScheduler` | Fixed-rate `IOL_DISCOVERY_REFRESH_RATE` (default 15 min) | Sync panel quotes |
-| `PortfolioSnapshotScheduler` | Daily midnight | Capture per-user portfolio snapshots |
+| `PortfolioSnapshotScheduler` | Daily midnight | Capture per-user portfolio snapshots; logs `ERROR "Portfolio snapshot capture failed for X of Y users"` when any user fails |
+
+**Valuation rule** — `AssetType.marketValue` is the only price × quantity: BOND quotes are per 100 VN, every other type per unit; average cost is per unit; no quote means valued at cost.
 
 After each price refresh `EvaluateThresholdsUseCase` checks P&L % against each holding's `ThresholdConfig`. On breach it writes an `investments.threshold.breached` CloudEvent (1.0, binary mode; `data` = `InvestmentThresholdData`) to the `outbox_event` table in the same DB transaction — the commons `OutboxRelay` publishes it to Kafka (consumed by ms-notifications) — and stamps the matching `NotificationTimestamps` field to prevent re-notification.
 
