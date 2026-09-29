@@ -124,6 +124,26 @@ class UpdateHoldingUseCaseImplTest {
         verify(eventPublisher).publish(any(HoldingUpdatedEvent.class));
     }
 
+    @Test
+    void execute_keepsTheEditedTickerAndAssetType_andMovesNoMoneyWithoutAFundingCbu() {
+        Holding existing = holding(new BigDecimal("86200"), new BigDecimal("8.0216"));
+        when(holdingRepository.findByIdAndUserId(HID, USER)).thenReturn(Optional.of(existing));
+        when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        UpdateHoldingCommand cmd = new UpdateHoldingCommand(
+                USER, HID, ACC, new Ticker("GD30"), "Bono GD30", AssetType.BOND,
+                new HoldingQuantity(new BigDecimal("862")),
+                Money.of(new BigDecimal("802.16"), "ARS"),
+                ThresholdConfig.disabled(), null);
+
+        Holding saved = useCase.execute(cmd);
+
+        assertThat(saved.ticker()).isEqualTo(new Ticker("GD30"));
+        assertThat(saved.assetType()).isEqualTo(AssetType.BOND);
+        assertThat(saved.quantity().value()).isEqualByComparingTo("862");
+        verifyNoInteractions(financesGateway);
+    }
+
     private static Holding holding(BigDecimal qty, BigDecimal price) {
         return new Holding(HID, USER, ACC, TIC, "Apple", AssetType.STOCK,
                 new HoldingQuantity(qty), Money.of(price, "ARS"),

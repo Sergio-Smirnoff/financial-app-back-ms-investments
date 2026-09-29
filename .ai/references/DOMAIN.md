@@ -19,7 +19,8 @@ Shared VOs (`Money`, `Cbu`, `BankNumber`, `UserId`): parent `.ai/references/APP_
 | `AssetPrice` | Current market price per ticker | `ticker`, `lastPrice`, `openPrice`, `highPrice`, `lowPrice`, `volume`, `dailyVariation` |
 | `AssetPriceHistory` | Historical OHLC snapshot | `ticker`, `lastPrice`, `pricedAt`, filtered to omit zero-price pre-open candles |
 | `MarketQuote` | Market discovery panel item | `symbol`, `lastPrice`, `dailyVariation` |
-| `PortfolioSnapshot` | EOD portfolio valuation snapshot | `userId`, `snapshotDate`, `totalsByCurrency` (JSONB); one per user per ART day (V7 UNIQUE(user_id, snapshot_date)), written by the midnight scheduler or ensure-today — a lost race answers created=false |
+| `PortfolioSnapshot` | EOD portfolio valuation snapshot | `userId`, `snapshotDate`, `totals` (JSONB by currency; mapped `@JdbcTypeCode(SqlTypes.JSON)` on `PortfolioSnapshotJpaEntity`); one per user per ART day (V7 UNIQUE(user_id, snapshot_date)), written by the midnight scheduler or ensure-today — a lost race answers created=false |
+| `PositionValuation` | Valuation of one position or an aggregate of them (record) | `marketValue`, `costBasis` (same currency); derives `profitAndLoss()` and `profitAndLossPercent()` (4 dp, `0` when cost is zero) |
 | `RefreshJob` | Price refresh execution state | `status`, `startedAt`, `finishedAt` |
 
 ## Value objects
@@ -41,6 +42,14 @@ Service-local only — `Money`, `Cbu`, `BankNumber`, `UserId` documented once at
 | `FxView` | `MEP`, `CCL`, `OFICIAL` | Selected on FX rate queries and conversions |
 | `FxRateSource` | `IOL_SYNTHETIC`, `IOL_DIRECT`, `MANUAL` | Set based on rate calculation origin |
 | `RefreshJobStatus` | `IN_PROGRESS`, `COMPLETED`, `FAILED` | Tracks scheduled price refresh run state |
+
+## Valuation rule
+
+`AssetType.marketValue(quote, quantity)` is the single price × quantity rule: **BOND quotes are per 100 VN**
+(`AssetType.unitPrice` = quote / 100), every other type is quoted per unit. `avgPurchasePrice` is always per unit.
+No quote for a ticker means the position is valued at cost (`Holding.valuationAtCost()`).
+`Holding.costBasis`, `marketValue`, `valuation` and `valuationAtCost` are the only price × quantity in the service —
+do not multiply a quote by a quantity anywhere else.
 
 ## Domain services
 

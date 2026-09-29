@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -90,6 +91,16 @@ class EnsurePortfolioSnapshotUseCaseImplTest {
         when(snapshotRepository.saveIfAbsent(any())).thenReturn(false);
 
         assertThat(useCase.execute(COMMAND)).isEqualTo(new EnsureSnapshotResult(false, ART_DAY));
+    }
+
+    @Test
+    void execute_failingInsert_propagatesSoTheCaptureRunCanCountIt() {
+        when(snapshotRepository.existsForDate(USER, ART_DAY)).thenReturn(false);
+        when(summaryUseCase.execute(new GetPortfolioSummaryCommand(USER))).thenReturn(summaryOf("ARS"));
+        when(snapshotRepository.saveIfAbsent(any()))
+                .thenThrow(new IllegalStateException("column \"totals\" is of type jsonb but expression is of type character varying"));
+
+        assertThatThrownBy(() -> useCase.execute(COMMAND)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test

@@ -1,16 +1,20 @@
 package com.financialapp.investments.application.holding.impl;
-import com.financialapp.commons.core.domain.model.Cbu;
 
-import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
-import com.financialapp.investments.domain.usecase.holding.CloseHoldingUseCase;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.event.HoldingClosedEvent;
 import com.financialapp.investments.domain.exception.ResourceNotFoundException;
-import com.financialapp.investments.domain.model.holding.Holding;
-import com.financialapp.investments.domain.gateway.FinancesGateway;
 import com.financialapp.investments.domain.gateway.DomainEventPublisher;
+import com.financialapp.investments.domain.gateway.FinancesGateway;
+import com.financialapp.investments.domain.model.fee.BrokerFeeSchedule;
+import com.financialapp.investments.domain.model.fee.NetPositionResult;
+import com.financialapp.investments.domain.model.fee.TradeSide;
+import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
+import com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
+import com.financialapp.investments.domain.service.BrokerFeeNetting;
+import com.financialapp.investments.domain.usecase.holding.CloseHoldingUseCase;
+import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +30,7 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
     private final AssetPriceRepository assetPriceRepository;
     private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
-    private final com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
+    private final BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
     @Override
     public void execute(CloseHoldingCommand command) {
@@ -35,18 +39,17 @@ public class CloseHoldingUseCaseImpl implements CloseHoldingUseCase {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Holding not found: " + command.holdingId().value()));
 
-        Money unitPrice = assetPriceRepository.findByTicker(holding.ticker())
-                .map(ap -> Money.of(ap.lastPrice(), ap.currency()))
-                .orElse(holding.avgPurchasePrice());
+        Money proceeds = assetPriceRepository.findByTicker(holding.ticker())
+                .map(price -> holding.marketValue(Money.of(price.lastPrice(), price.currency())))
+                .orElseGet(holding::costBasis);
 
-        Money proceeds = unitPrice.multiply(holding.quantity().value());
-
-        com.financialapp.investments.domain.model.fee.BrokerFeeSchedule schedule = brokerFeeScheduleRepository
+        BrokerFeeSchedule schedule = brokerFeeScheduleRepository
                 .findFor(holding.bankNumber(), holding.assetType())
                 .orElse(null);
-        com.financialapp.investments.domain.service.BrokerFeeNetting feeNetting = new com.financialapp.investments.domain.service.BrokerFeeNetting();
-        com.financialapp.investments.domain.model.fee.NetPositionResult sellNet = feeNetting.apply(proceeds, proceeds, schedule, com.financialapp.investments.domain.model.fee.TradeSide.SELL);
-        Money bookedAmount = sellNet.feeExceedsGross() ? Money.zero(proceeds.currency().getCurrencyCode()) : sellNet.netMagnitude();
+        NetPositionResult sellNet = new BrokerFeeNetting().apply(proceeds, proceeds, schedule, TradeSide.SELL);
+        Money bookedAmount = sellNet.feeExceedsGross()
+                ? Money.zero(proceeds.currency().getCurrencyCode())
+                : sellNet.netMagnitude();
 
         if (command.destinationCbu() != null) {
             financesGateway.recordSaleProceeds(command.userId(), command.destinationCbu(), bookedAmount);

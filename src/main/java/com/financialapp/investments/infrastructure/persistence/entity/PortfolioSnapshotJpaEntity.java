@@ -2,6 +2,8 @@ package com.financialapp.investments.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ public class PortfolioSnapshotJpaEntity {
     @Column(name = "snapshot_date", nullable = false)
     private LocalDate snapshotDate;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "totals", nullable = false, columnDefinition = "JSONB")
     private String totals;
 

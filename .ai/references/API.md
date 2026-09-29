@@ -10,7 +10,7 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 | GET | `/api/v1/investments/holdings` | List user holdings (optional `?assetType=`) | — |
 | GET | `/api/v1/investments/holdings/valuation` | Derived investment read-model valuation (`?bankNumber=&currency=`) | `invalid_bank_number`, `invalid_currency` |
 | POST | `/api/v1/investments/holdings` | Create holding (records buy transaction in ms-finances if `fundingCbu` set) | `resource_already_exists`, `invalid_ticker`, `finances_service_unavailable` |
-| PUT | `/api/v1/investments/holdings/{id}` | Update quantity, average purchase price or thresholds | `resource_not_found`, `invalid_quantity` |
+| PUT | `/api/v1/investments/holdings/{id}` | Update ticker, asset type, quantity, average purchase price or thresholds | `resource_not_found`, `invalid_quantity` |
 | DELETE | `/api/v1/investments/holdings/{id}` | Close/sell holding (records proceeds in ms-finances if `destinationCbu` set) | `resource_not_found`, `finances_service_unavailable` |
 | GET | `/api/v1/investments/portfolio/summary` | Aggregated portfolio valuation, total P&L, allocation breakdown | — |
 | GET | `/api/v1/investments/portfolio/holdings` | List holdings enriched with live prices and P&L % | — |
@@ -28,6 +28,12 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 | POST | `/api/v1/investments/fx/rates/backfill` | Idempotent backfill of FX rates (`?from=&to=`) | `iol_service_unavailable` |
 | PUT | `/api/v1/investments/fees/brokers/{bankNumber}` | Upsert broker fee schedule for a bank | `invalid_fee_schedule` |
 | GET | `/api/v1/investments/fees/brokers` | List all broker fee schedules | — |
+
+## Valuation notes
+
+- Position values and sale proceeds follow the per-100 rule for `BOND` (see `DOMAIN.md` § Valuation rule); every other type is per unit.
+- `positions/search` `marketValue` is the position's cost basis (`Holding.costBasis`), not a live value.
+- `HoldingWithPriceResult.currentPrice` (holdings and portfolio-holdings `currentPrice`): for a bond it is the raw per-100 quote when a price exists, but the per-1 average cost when no price exists (pre-existing). Clients must not derive values from it; use the returned `marketValue` and P&L fields.
 
 ## DomainError catalog
 

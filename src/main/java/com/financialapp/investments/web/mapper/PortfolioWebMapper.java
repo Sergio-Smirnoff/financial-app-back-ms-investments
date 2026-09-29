@@ -16,7 +16,6 @@ import com.financialapp.investments.web.dto.response.PortfolioSummaryResponse;
 import com.financialapp.investments.web.dto.response.PositionSearchResponse;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static com.financialapp.investments.web.mapper.BigDecimals.toPlain;
@@ -46,13 +45,12 @@ public class PortfolioWebMapper {
     }
 
     public PositionSearchResponse toPositionSearchResponse(Holding holding) {
-        BigDecimal marketValue = holding.avgPurchasePrice().amount().multiply(holding.quantity().value());
         return new PositionSearchResponse(
                 holding.id() != null ? holding.id().value() : null,
                 holding.ticker().value(),
                 holding.name(),
                 toPlain(holding.quantity().value()),
-                toPlain(marketValue),
+                toPlain(holding.costBasis().amount()),
                 holding.avgPurchasePrice().currency().getCurrencyCode()
         );
     }

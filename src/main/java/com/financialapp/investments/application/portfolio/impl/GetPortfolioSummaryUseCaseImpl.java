@@ -1,6 +1,7 @@
 package com.financialapp.investments.application.portfolio.impl;
 
 import com.financialapp.investments.domain.common.model.Money;
+import com.financialapp.investments.domain.model.holding.PositionValuation;
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.usecase.portfolio.GetHoldingsWithPricesUseCase;
 import com.financialapp.investments.domain.usecase.portfolio.GetPortfolioSummaryUseCase;
@@ -52,25 +53,17 @@ public class GetPortfolioSummaryUseCaseImpl implements GetPortfolioSummaryUseCas
         Map<AssetType, BigDecimal> valueByType = new EnumMap<>(AssetType.class);
 
         for (HoldingWithPriceResult item : items) {
-            BigDecimal cost = item.holding().avgPurchasePrice().amount()
-                    .multiply(item.holding().quantity().value());
             totalValueAmount = totalValueAmount.add(item.currentValue());
-            totalCostAmount = totalCostAmount.add(cost);
+            totalCostAmount = totalCostAmount.add(item.holding().costBasis().amount());
             valueByType.merge(item.holding().assetType(), item.currentValue(), BigDecimal::add);
         }
 
-        Money totalValue = new Money(totalValueAmount, currency);
-        Money totalCost = new Money(totalCostAmount, currency);
-        Money totalPl = totalValue.subtract(totalCost);
-
-        BigDecimal plPercent = totalCostAmount.compareTo(BigDecimal.ZERO) != 0
-                ? totalPl.amount().divide(totalCostAmount, 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100))
-                : BigDecimal.ZERO;
-
+        PositionValuation totals = new PositionValuation(
+                new Money(totalValueAmount, currency), new Money(totalCostAmount, currency));
         List<AllocationBreakdownResult> breakdown = buildBreakdown(valueByType, totalValueAmount, currency);
 
-        return new CurrencyTotals(totalValue, totalCost, totalPl, plPercent, breakdown);
+        return new CurrencyTotals(totals.marketValue(), totals.costBasis(), totals.profitAndLoss(),
+                totals.profitAndLossPercent(), breakdown);
     }
 
     private List<AllocationBreakdownResult> buildBreakdown(
