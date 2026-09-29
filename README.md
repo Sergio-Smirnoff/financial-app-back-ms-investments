@@ -43,7 +43,9 @@ Holdings CRUD, portfolio P&L, live IOL price feed, price history, and notificati
 | `PriceRefreshScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Refresh live prices + evaluate thresholds |
 | `FxRateSyncScheduler` | `IOL_PRICE_REFRESH_CRON` (weekdays 10–17 ARS) | Sync synthetic MEP/CCL and official FX rates |
 | `MarketDiscoveryScheduler` | Fixed-rate `IOL_DISCOVERY_REFRESH_RATE` (default 15 min) | Sync panel quotes |
-| `PortfolioSnapshotScheduler` | Daily midnight | Capture per-user portfolio snapshots; logs `ERROR "Portfolio snapshot capture failed for X of Y users"` when any user fails |
+| `PortfolioSnapshotScheduler` | Daily ART midnight (`investments.zone`) | Ensure per-user portfolio snapshots (skips existing rows); logs `ERROR "Portfolio snapshot capture failed for X of Y users"` when any user fails |
+
+`POST /api/v1/investments/portfolio/snapshot/ensure-today` runs the same per-user body on demand for the caller, so a server that was off at midnight catches up at boot. Both use the ART clock bean (`ClockConfig`).
 
 **Valuation rule** — `AssetType.marketValue` is the only price × quantity: BOND quotes are per 100 VN, every other type per unit; average cost is per unit; no quote means valued at cost.
 
@@ -231,7 +233,10 @@ src/main/java/com/financialapp/investments/
 │       │   ├── RefreshPricesUseCase.java
 │       │   └── command/
 │       └── snapshot/
-│           └── CapturePortfolioSnapshotUseCase.java
+│           ├── CapturePortfolioSnapshotUseCase.java
+│           ├── EnsurePortfolioSnapshotUseCase.java
+│           ├── command/
+│           └── response/
 ├── application/
 │   ├── holding/impl/
 │   ├── market/impl/
@@ -241,6 +246,7 @@ src/main/java/com/financialapp/investments/
 ├── infrastructure/
 │   ├── config/
 │   │   ├── CacheConfig.java
+│   │   ├── ClockConfig.java
 │   │   ├── CurrenciesProperties.java
 │   │   ├── FeignConfig.java
 │   │   ├── InternalAuthFilter.java
@@ -271,6 +277,7 @@ src/main/java/com/financialapp/investments/
     │   ├── HoldingController.java
     │   ├── MarketDiscoveryController.java
     │   ├── PortfolioController.java
+    │   ├── PortfolioSnapshotController.java
     │   ├── PriceController.java
     │   └── PriceHistoryController.java
     ├── dto/

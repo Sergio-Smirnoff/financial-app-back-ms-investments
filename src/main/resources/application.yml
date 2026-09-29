@@ -37,6 +37,7 @@ spring:
       group-id: investments-group
 
 investments:
+  zone: America/Argentina/Buenos_Aires
   currencies:
     # Whitelist of ISO 4217 codes accepted on inbound holdings.
     supported: [ARS, USD, EUR]

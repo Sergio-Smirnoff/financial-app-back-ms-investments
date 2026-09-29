@@ -6,6 +6,7 @@ import com.financialapp.investments.domain.repository.PortfolioSnapshotRepositor
 import com.financialapp.investments.infrastructure.persistence.jpa.PortfolioSnapshotJpaRepository;
 import com.financialapp.investments.infrastructure.persistence.mapper.PortfolioSnapshotPersistenceMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -21,6 +22,21 @@ public class PortfolioSnapshotRepositoryImpl implements PortfolioSnapshotReposit
     @Override
     public PortfolioSnapshot save(PortfolioSnapshot snapshot) {
         return mapper.toDomain(jpaRepository.save(mapper.toEntity(snapshot)));
+    }
+
+    @Override
+    public boolean existsForDate(UserId userId, LocalDate date) {
+        return jpaRepository.existsByUserIdAndSnapshotDate(userId.value(), date);
+    }
+
+    @Override
+    public boolean saveIfAbsent(PortfolioSnapshot snapshot) {
+        try {
+            jpaRepository.saveAndFlush(mapper.toEntity(snapshot));
+            return true;
+        } catch (DataIntegrityViolationException e) {
+            return false;
+        }
     }
 
     @Override

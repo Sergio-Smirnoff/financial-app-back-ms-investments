@@ -10,5 +10,9 @@ public interface PortfolioSnapshotRepository {
 
     PortfolioSnapshot save(PortfolioSnapshot snapshot);
 
+    boolean existsForDate(UserId userId, LocalDate date);
+
+    boolean saveIfAbsent(PortfolioSnapshot snapshot);
+
     List<PortfolioSnapshot> findByUserIdAndSnapshotDateAfter(UserId userId, LocalDate from);
 }

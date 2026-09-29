@@ -1,28 +1,25 @@
 package com.financialapp.investments.application.snapshot;
 
 import com.financialapp.investments.application.snapshot.impl.CapturePortfolioSnapshotUseCaseImpl;
-import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.gateway.HoldingQueryGateway;
-import com.financialapp.investments.domain.model.snapshot.PortfolioSnapshot;
-import com.financialapp.investments.domain.repository.PortfolioSnapshotRepository;
-import com.financialapp.investments.domain.usecase.portfolio.GetPortfolioSummaryUseCase;
-import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioSummaryCommand;
-import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
-import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioSummaryResult;
+import com.financialapp.investments.domain.usecase.snapshot.EnsurePortfolioSnapshotUseCase;
+import com.financialapp.investments.domain.usecase.snapshot.command.EnsurePortfolioSnapshotCommand;
+import com.financialapp.investments.domain.usecase.snapshot.response.EnsureSnapshotResult;
 import com.financialapp.investments.domain.usecase.snapshot.response.SnapshotCaptureResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,25 +28,20 @@ import static org.mockito.Mockito.when;
 class CapturePortfolioSnapshotUseCaseImplTest {
 
     @Mock private HoldingQueryGateway holdingQueryGateway;
-    @Mock private GetPortfolioSummaryUseCase summaryUseCase;
-    @Mock private PortfolioSnapshotRepository snapshotRepository;
+    @Mock private EnsurePortfolioSnapshotUseCase ensurePortfolioSnapshotUseCase;
     @InjectMocks private CapturePortfolioSnapshotUseCaseImpl useCase;
 
     @Test
-    void execute_savesSnapshotPerUser() {
+    void execute_ensuresEachHoldersSnapshot() {
         UserId u1 = new UserId(1L);
         UserId u2 = new UserId(2L);
         when(holdingQueryGateway.findDistinctUserIds()).thenReturn(List.of(u1, u2));
-        Money m = Money.of(new BigDecimal("100"), "ARS");
-        CurrencyTotals ct = new CurrencyTotals(m, m, m, BigDecimal.ZERO, List.of());
-        when(summaryUseCase.execute(any())).thenReturn(new PortfolioSummaryResult(List.of(ct)));
 
         SnapshotCaptureResult result = useCase.execute();
 
-        ArgumentCaptor<PortfolioSnapshot> cap = ArgumentCaptor.forClass(PortfolioSnapshot.class);
-        verify(snapshotRepository, times(2)).save(cap.capture());
-        assertThat(cap.getAllValues()).extracting(PortfolioSnapshot::userId).containsExactly(u1, u2);
-        assertThat(cap.getAllValues()).allSatisfy(s -> assertThat(s.totals()).hasSize(1));
+        InOrder order = inOrder(ensurePortfolioSnapshotUseCase);
+        order.verify(ensurePortfolioSnapshotUseCase).execute(new EnsurePortfolioSnapshotCommand(u1));
+        order.verify(ensurePortfolioSnapshotUseCase).execute(new EnsurePortfolioSnapshotCommand(u2));
         assertThat(result).isEqualTo(new SnapshotCaptureResult(2, 0));
     }
 
@@ -58,16 +50,12 @@ class CapturePortfolioSnapshotUseCaseImplTest {
         UserId u1 = new UserId(1L);
         UserId u2 = new UserId(2L);
         when(holdingQueryGateway.findDistinctUserIds()).thenReturn(List.of(u1, u2));
-        Money m = Money.of(new BigDecimal("100"), "ARS");
-        CurrencyTotals ct = new CurrencyTotals(m, m, m, BigDecimal.ZERO, List.of());
-        when(summaryUseCase.execute(new GetPortfolioSummaryCommand(u1)))
+        when(ensurePortfolioSnapshotUseCase.execute(new EnsurePortfolioSnapshotCommand(u1)))
                 .thenThrow(new RuntimeException("boom"));
-        when(summaryUseCase.execute(new GetPortfolioSummaryCommand(u2)))
-                .thenReturn(new PortfolioSummaryResult(List.of(ct)));
 
         SnapshotCaptureResult result = useCase.execute();
 
-        verify(snapshotRepository, times(1)).save(any());
+        verify(ensurePortfolioSnapshotUseCase).execute(new EnsurePortfolioSnapshotCommand(u2));
         assertThat(result).isEqualTo(new SnapshotCaptureResult(2, 1));
     }
 
@@ -76,16 +64,13 @@ class CapturePortfolioSnapshotUseCaseImplTest {
         UserId u1 = new UserId(1L);
         UserId u2 = new UserId(2L);
         when(holdingQueryGateway.findDistinctUserIds()).thenReturn(List.of(u1, u2));
-        Money m = Money.of(new BigDecimal("100"), "ARS");
-        CurrencyTotals ct = new CurrencyTotals(m, m, m, BigDecimal.ZERO, List.of());
-        when(summaryUseCase.execute(any())).thenReturn(new PortfolioSummaryResult(List.of(ct)));
-        when(snapshotRepository.save(any()))
+        when(ensurePortfolioSnapshotUseCase.execute(any()))
                 .thenThrow(new IllegalStateException("column \"totals\" is of type jsonb but expression is of type character varying"))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenReturn(new EnsureSnapshotResult(true, LocalDate.of(2026, 9, 22)));
 
         SnapshotCaptureResult result = useCase.execute();
 
-        verify(snapshotRepository, times(2)).save(any());
+        verify(ensurePortfolioSnapshotUseCase, times(2)).execute(any());
         assertThat(result).isEqualTo(new SnapshotCaptureResult(2, 1));
     }
 }

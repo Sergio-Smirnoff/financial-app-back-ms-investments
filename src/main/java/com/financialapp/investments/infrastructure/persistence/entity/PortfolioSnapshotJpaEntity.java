@@ -9,7 +9,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "portfolio_snapshots", schema = "investments")
+@Table(name = "portfolio_snapshots", schema = "investments",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "snapshot_date"}))
 @Getter
 @Setter
 @NoArgsConstructor
