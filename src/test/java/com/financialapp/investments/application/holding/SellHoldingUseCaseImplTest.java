@@ -1,6 +1,7 @@
 package com.financialapp.investments.application.holding;
 
 import com.financialapp.commons.core.domain.model.Cbu;
+import com.financialapp.commons.core.domain.model.IvaTreatment;
 import com.financialapp.investments.application.holding.impl.SellHoldingUseCaseImpl;
 import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Money;
@@ -12,6 +13,8 @@ import com.financialapp.investments.domain.exception.ResourceNotFoundException;
 import com.financialapp.investments.domain.exception.holding.HoldingSaleExceedsQuantityException;
 import com.financialapp.investments.domain.gateway.DomainEventPublisher;
 import com.financialapp.investments.domain.gateway.FinancesGateway;
+import com.financialapp.investments.domain.model.fee.BrokerFeeSchedule;
+import com.financialapp.investments.domain.model.fee.BrokerFeeScheduleId;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetPrice;
 import com.financialapp.investments.domain.model.price.AssetPriceId;
@@ -211,6 +214,53 @@ class SellHoldingUseCaseImplTest {
     }
 
     @Test
+    void sellPart_withoutAFeeSchedule_booksAFractionalSaleRoundedToCents() {
+        Holding holding = holding("AAPL", "10", "150");
+        when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
+        when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(brokerFeeScheduleRepository.findFor(any(), any())).thenReturn(Optional.empty());
+
+        HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("7")), new BigDecimal("10.123"), DESTINATION_CBU));
+
+        assertThat(bookedAmount()).isEqualTo(new BigDecimal("70.86"));
+        assertThat(sale.bookedAmount().amount()).isEqualTo(new BigDecimal("70.86"));
+        assertThat(sale.proceeds().amount()).isEqualByComparingTo("70.861");
+    }
+
+    @Test
+    void sellPart_withASellFee_booksTheProceedsNetOfTheFee() {
+        Holding holding = holding("AAPL", "10", "150");
+        when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
+        when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(brokerFeeScheduleRepository.findFor(new BankNumber("007"), AssetType.STOCK))
+                .thenReturn(Optional.of(feeSchedule("0.50", null)));
+
+        HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
+
+        assertThat(bookedAmount()).isEqualTo(new BigDecimal("796.00"));
+        assertThat(sale.bookedAmount().amount()).isEqualTo(new BigDecimal("796.00"));
+        assertThat(sale.proceeds().amount()).isEqualByComparingTo("800");
+    }
+
+    @Test
+    void sellPart_whenTheFeeExceedsTheProceeds_booksZero() {
+        Holding holding = holding("AAPL", "10", "150");
+        when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
+        when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(brokerFeeScheduleRepository.findFor(new BankNumber("007"), AssetType.STOCK))
+                .thenReturn(Optional.of(feeSchedule("0.50", "1000.00")));
+
+        HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
+
+        assertThat(bookedAmount()).isEqualByComparingTo("0");
+        assertThat(sale.bookedAmount().amount()).isEqualByComparingTo("0");
+        assertThat(sale.proceeds().amount()).isEqualByComparingTo("800");
+    }
+
+    @Test
     void sellingMoreThanHeld_movesNoMoney_andKeepsTheHolding() {
         Holding holding = holding("AAPL", "10", "150");
         when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
@@ -249,6 +299,13 @@ class SellHoldingUseCaseImplTest {
                 new HoldingQuantity(new BigDecimal("687")), Money.of(new BigDecimal("1435.78"), "ARS"),
                 ThresholdConfig.disabled(), NotificationTimestamps.empty(),
                 LocalDateTime.now(), LocalDateTime.now());
+    }
+
+    private static BrokerFeeSchedule feeSchedule(String sellFeePct, String minimumFee) {
+        return new BrokerFeeSchedule(new BrokerFeeScheduleId(1L), new BankNumber("007"), AssetType.STOCK,
+                BigDecimal.ZERO, new BigDecimal(sellFeePct),
+                minimumFee != null ? Money.of(new BigDecimal(minimumFee), "ARS") : null,
+                BigDecimal.ZERO, IvaTreatment.EXEMPT);
     }
 
     private static AssetPrice assetPrice(String ticker, String price) {
