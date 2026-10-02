@@ -39,6 +39,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -128,6 +129,36 @@ class HoldingControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("validation_error"))
                 .andExpect(jsonPath("$.message").value("Request validation failed"));
+    }
+
+    @Test
+    void create_aQuantityWithMoreThanSixDecimals_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setQuantity(new BigDecimal("1.0000001"));
+
+        mockMvc.perform(post(BASE_URL)
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(createHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void create_anAveragePriceWithThirteenIntegerDigits_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setAvgPurchasePrice(new BigDecimal("1234567890123"));
+
+        mockMvc.perform(post(BASE_URL)
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
     }
 
     @Test
@@ -251,6 +282,63 @@ class HoldingControllerTest {
                         .content("{\"quantity\":1,\"price\":0}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("validation_error"));
+    }
+
+    @Test
+    void sell_aQuantityWithMoreThanSixDecimals_returns400() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":\"0.0000001\",\"price\":\"10.5\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(sellHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void sell_aQuantityWithThirteenIntegerDigits_returns400() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":\"1234567890123\",\"price\":\"10.5\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(sellHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void sell_aPriceWithMoreThanSixDecimals_returns400() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":\"4\",\"price\":\"10.1234567\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+    }
+
+    @Test
+    void sell_decimalStrings_deserializeAndReturn200() throws Exception {
+        when(sellHoldingUseCase.execute(any())).thenReturn(new HoldingSaleResult(
+                Money.of(new BigDecimal("42"), "ARS"), Money.of(new BigDecimal("42"), "ARS"),
+                new HoldingQuantity(new BigDecimal("4")), new HoldingQuantity(new BigDecimal("6"))));
+
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":\"4\",\"price\":\"10.5\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.soldQuantity").value("4"));
+
+        ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
+        verify(sellHoldingUseCase).execute(command.capture());
+        assertThat(command.getValue().quantity().value()).isEqualByComparingTo("4");
+        assertThat(command.getValue().manualQuote()).isEqualByComparingTo("10.5");
     }
 
     @Test

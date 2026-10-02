@@ -34,10 +34,12 @@ public class HoldingRequest {
 
     @NotNull(message = "Quantity is required")
     @Positive(message = "Quantity must be positive")
+    @Digits(integer = 12, fraction = 6, message = "Quantity allows at most 12 integer digits and 6 decimals")
     private BigDecimal quantity;
 
     @NotNull(message = "Average purchase price is required")
     @PositiveOrZero(message = "Average purchase price must be zero or positive")
+    @Digits(integer = 12, fraction = 6, message = "Average purchase price allows at most 12 integer digits and 6 decimals")
     private BigDecimal avgPurchasePrice;
 
     @NotBlank(message = "Currency is required")
