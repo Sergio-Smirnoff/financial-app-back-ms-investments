@@ -245,7 +245,7 @@ class SellHoldingUseCaseImplTest {
     }
 
     @Test
-    void sellPart_whenTheFeeExceedsTheProceeds_booksZero() {
+    void sellPart_whenTheFeeExceedsTheProceeds_sellsAndBooksNothing() {
         Holding holding = holding("AAPL", "10", "150");
         when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
         when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -255,9 +255,47 @@ class SellHoldingUseCaseImplTest {
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
                 USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
 
-        assertThat(bookedAmount()).isEqualByComparingTo("0");
+        verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
+        ArgumentCaptor<Holding> saved = ArgumentCaptor.forClass(Holding.class);
+        verify(holdingRepository).save(saved.capture());
+        assertThat(saved.getValue().quantity().value()).isEqualByComparingTo("6");
+        verify(eventPublisher).publish(any(HoldingUpdatedEvent.class));
         assertThat(sale.bookedAmount().amount()).isEqualByComparingTo("0");
         assertThat(sale.proceeds().amount()).isEqualByComparingTo("800");
+    }
+
+    @Test
+    void sellPart_whenTheProceedsRoundToZero_sellsAndBooksNothing() {
+        Holding holding = holding("AAPL", "10", "150");
+        when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
+        when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(brokerFeeScheduleRepository.findFor(any(), any())).thenReturn(Optional.empty());
+
+        HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("1")), new BigDecimal("0.004"), DESTINATION_CBU));
+
+        verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
+        verify(holdingRepository).save(any());
+        assertThat(sale.bookedAmount().amount()).isEqualByComparingTo("0");
+        assertThat(sale.remainingQuantity().value()).isEqualByComparingTo("9");
+    }
+
+    @Test
+    void sellAll_withZeroProceeds_deletesTheHoldingAndBooksNothing() {
+        Holding holding = holding("AAPL", "10", "150");
+        when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
+        when(brokerFeeScheduleRepository.findFor(new BankNumber("007"), AssetType.STOCK))
+                .thenReturn(Optional.of(feeSchedule("0.50", "1000.00")));
+
+        HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
+                USER_ID, holding.id(), null, new BigDecimal("50"), DESTINATION_CBU));
+
+        verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
+        verify(holdingRepository).delete(holding.id());
+        verify(holdingRepository, never()).save(any());
+        verify(eventPublisher).publish(any(HoldingClosedEvent.class));
+        assertThat(sale.closed()).isTrue();
+        assertThat(sale.bookedAmount().amount()).isEqualByComparingTo("0");
     }
 
     @Test

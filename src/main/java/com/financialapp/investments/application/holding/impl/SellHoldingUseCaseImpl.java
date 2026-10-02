@@ -49,7 +49,7 @@ public class SellHoldingUseCaseImpl implements SellHoldingUseCase {
         Money proceeds = proceedsOf(holding, sold, command.manualQuote());
         Money booked = netOfBrokerFees(holding, proceeds);
 
-        if (command.destinationCbu() != null) {
+        if (command.destinationCbu() != null && booked.isPositive()) {
             financesGateway.recordSaleProceeds(command.userId(), command.destinationCbu(), booked);
         }
 
