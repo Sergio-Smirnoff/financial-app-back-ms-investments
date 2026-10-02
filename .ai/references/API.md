@@ -34,6 +34,7 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 - Position values and sale proceeds follow the per-100 rule for `BOND` (see `DOMAIN.md` § Valuation rule); every other type is per unit.
 - `positions/search` `marketValue` is the position's cost basis (`Holding.costBasis`), not a live value.
 - `HoldingWithPriceResult.currentPrice` (holdings and portfolio-holdings `currentPrice`): for a bond it is the raw per-100 quote when a price exists, but the per-1 average cost when no price exists (pre-existing). Clients must not derive values from it; use the returned `marketValue` and P&L fields.
+- `portfolio/summary` `byCurrency[].breakdown[]` entry: `assetType`, `totalValue`, `totalCost`, `totalPl`, `percentage` (decimal strings, in the bucket's currency; `totalPl = totalValue − totalCost`, `percentage` = share of the bucket's `totalValue`) and `count` (integer, holdings of that type in the bucket). ms-gateway reads `totalCost` and `count` strictly — deploy this service before a gateway that reads them.
 
 ## DomainError catalog
 

@@ -8,5 +8,8 @@ import lombok.Getter;
 public class AllocationBreakdown {
     private String assetType;
     private String totalValue;
+    private String totalCost;
+    private String totalPl;
     private String percentage;
+    private int count;
 }

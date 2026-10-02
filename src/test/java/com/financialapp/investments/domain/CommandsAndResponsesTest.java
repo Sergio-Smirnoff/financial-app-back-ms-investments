@@ -188,14 +188,21 @@ class CommandsAndResponsesTest {
 
     @Test
     void allocationBreakdownResult_nullChecks() {
-        assertThatThrownBy(() -> new AllocationBreakdownResult(null, ARS, BigDecimal.ZERO))
+        assertThatThrownBy(() -> new AllocationBreakdownResult(null, ARS, ARS, ARS, BigDecimal.ZERO, 1))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, null, BigDecimal.ZERO))
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, null, ARS, ARS, BigDecimal.ZERO, 1))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, null))
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, null, ARS, BigDecimal.ZERO, 1))
                 .isInstanceOf(NullPointerException.class);
-        AllocationBreakdownResult ok = new AllocationBreakdownResult(AssetType.STOCK, ARS, BigDecimal.ONE);
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, null, BigDecimal.ZERO, 1))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, ARS, null, 1))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, ARS, BigDecimal.ONE, -1))
+                .isInstanceOf(IllegalArgumentException.class);
+        AllocationBreakdownResult ok = new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, ARS, BigDecimal.ONE, 2);
         assertThat(ok.assetType()).isEqualTo(AssetType.STOCK);
+        assertThat(ok.count()).isEqualTo(2);
     }
 
     @Test

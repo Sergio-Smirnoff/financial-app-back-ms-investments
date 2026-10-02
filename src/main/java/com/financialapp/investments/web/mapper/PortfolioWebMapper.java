@@ -79,7 +79,10 @@ public class PortfolioWebMapper {
                 .map(r -> AllocationBreakdown.builder()
                         .assetType(r.assetType().name())
                         .totalValue(toPlain(r.totalValue().amount()))
+                        .totalCost(toPlain(r.totalCost().amount()))
+                        .totalPl(toPlain(r.totalPl().amount()))
                         .percentage(toPlain(r.percentage()))
+                        .count(r.count())
                         .build())
                 .toList();
     }

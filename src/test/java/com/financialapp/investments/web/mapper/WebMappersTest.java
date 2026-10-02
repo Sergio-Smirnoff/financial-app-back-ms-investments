@@ -154,7 +154,9 @@ class WebMappersTest {
 
     @Test
     void portfolioMapper_toResponse_includesBreakdownAndNullBreakdown() {
-        AllocationBreakdownResult brk = new AllocationBreakdownResult(AssetType.STOCK, PRICE, new BigDecimal("100.00"));
+        AllocationBreakdownResult brk = new AllocationBreakdownResult(AssetType.STOCK, PRICE,
+                Money.of(new BigDecimal("80.00"), "ARS"), Money.of(new BigDecimal("20.00"), "ARS"),
+                new BigDecimal("100.00"), 3);
         CurrencyTotals withBrk = new CurrencyTotals(PRICE, PRICE, PRICE, new BigDecimal("0.00"), List.of(brk));
         CurrencyTotals empty = new CurrencyTotals(PRICE, PRICE, PRICE, new BigDecimal("0.00"), null);
         PortfolioSummaryResult result = new PortfolioSummaryResult(List.of(withBrk, empty));
@@ -168,6 +170,9 @@ class WebMappersTest {
         assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getAssetType()).isEqualTo("STOCK");
         assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getTotalValue()).isEqualTo("100.00");
         assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getPercentage()).isEqualTo("100.00");
+        assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getTotalCost()).isEqualTo("80.00");
+        assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getTotalPl()).isEqualTo("20.00");
+        assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getCount()).isEqualTo(3);
         assertThat(r.getByCurrency().get(1).getBreakdown()).isEmpty();
     }
 

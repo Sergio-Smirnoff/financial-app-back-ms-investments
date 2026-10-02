@@ -48,36 +48,43 @@ public class GetPortfolioSummaryUseCaseImpl implements GetPortfolioSummaryUseCas
     }
 
     private CurrencyTotals computeTotals(Currency currency, List<HoldingWithPriceResult> items) {
-        BigDecimal totalValueAmount = BigDecimal.ZERO;
-        BigDecimal totalCostAmount = BigDecimal.ZERO;
-        Map<AssetType, BigDecimal> valueByType = new EnumMap<>(AssetType.class);
-
-        for (HoldingWithPriceResult item : items) {
-            totalValueAmount = totalValueAmount.add(item.currentValue());
-            totalCostAmount = totalCostAmount.add(item.holding().costBasis().amount());
-            valueByType.merge(item.holding().assetType(), item.currentValue(), BigDecimal::add);
-        }
-
-        PositionValuation totals = new PositionValuation(
-                new Money(totalValueAmount, currency), new Money(totalCostAmount, currency));
-        List<AllocationBreakdownResult> breakdown = buildBreakdown(valueByType, totalValueAmount, currency);
+        PositionValuation totals = valuationOf(items, currency);
+        List<AllocationBreakdownResult> breakdown = buildBreakdown(items, totals.marketValue());
 
         return new CurrencyTotals(totals.marketValue(), totals.costBasis(), totals.profitAndLoss(),
                 totals.profitAndLossPercent(), breakdown);
     }
 
-    private List<AllocationBreakdownResult> buildBreakdown(
-            Map<AssetType, BigDecimal> valueByType, BigDecimal total, Currency currency) {
-        return valueByType.entrySet().stream()
+    private List<AllocationBreakdownResult> buildBreakdown(List<HoldingWithPriceResult> items, Money total) {
+        Map<AssetType, List<HoldingWithPriceResult>> byType = items.stream()
+                .collect(Collectors.groupingBy(item -> item.holding().assetType(),
+                        () -> new EnumMap<>(AssetType.class), Collectors.toList()));
+        return byType.entrySet().stream()
                 .map(e -> {
-                    BigDecimal percentage = total.compareTo(BigDecimal.ZERO) != 0
-                            ? e.getValue().divide(total, 4, RoundingMode.HALF_UP)
-                                    .multiply(BigDecimal.valueOf(100))
-                            : BigDecimal.ZERO;
-                    return new AllocationBreakdownResult(
-                            e.getKey(), new Money(e.getValue(), currency), percentage);
+                    PositionValuation valuation = valuationOf(e.getValue(), total.currency());
+                    return new AllocationBreakdownResult(e.getKey(), valuation.marketValue(),
+                            valuation.costBasis(), valuation.profitAndLoss(),
+                            shareOf(valuation.marketValue(), total), e.getValue().size());
                 })
                 .sorted(Comparator.comparing(r -> r.assetType().name()))
                 .toList();
+    }
+
+    private static PositionValuation valuationOf(List<HoldingWithPriceResult> items, Currency currency) {
+        BigDecimal value = BigDecimal.ZERO;
+        BigDecimal cost = BigDecimal.ZERO;
+        for (HoldingWithPriceResult item : items) {
+            value = value.add(item.currentValue());
+            cost = cost.add(item.holding().costBasis().amount());
+        }
+        return new PositionValuation(new Money(value, currency), new Money(cost, currency));
+    }
+
+    private static BigDecimal shareOf(Money part, Money total) {
+        if (total.amount().compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        return part.amount().divide(total.amount(), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
     }
 }

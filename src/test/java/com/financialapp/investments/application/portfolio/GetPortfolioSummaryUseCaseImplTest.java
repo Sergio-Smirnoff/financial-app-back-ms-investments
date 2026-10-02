@@ -9,6 +9,7 @@ import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.usecase.portfolio.GetHoldingsWithPricesUseCase;
 import com.financialapp.investments.domain.usecase.portfolio.command.GetPortfolioSummaryCommand;
+import com.financialapp.investments.domain.usecase.portfolio.response.AllocationBreakdownResult;
 import com.financialapp.investments.domain.usecase.portfolio.response.CurrencyTotals;
 import com.financialapp.investments.domain.usecase.portfolio.response.HoldingWithPriceResult;
 import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioSummaryResult;
@@ -19,9 +20,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Currency;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -118,15 +123,63 @@ class GetPortfolioSummaryUseCaseImplTest {
                 .isEqualByComparingTo(BigDecimal.ZERO);
     }
 
+    @Test
+    void breakdownCarriesCostPlAndCountPerTypeInsideEachCurrency() {
+        HoldingWithPriceResult stockA = holdingResult("GGAL", AssetType.STOCK, ARS,
+                new BigDecimal("10"), new BigDecimal("100"), new BigDecimal("110"));
+        HoldingWithPriceResult stockB = holdingResult("YPFD", AssetType.STOCK, ARS,
+                new BigDecimal("5"), new BigDecimal("200"), new BigDecimal("220"));
+        HoldingWithPriceResult bond = holdingResult("GD30", AssetType.BOND, ARS,
+                new BigDecimal("100"), new BigDecimal("1"), new BigDecimal("1.5"));
+        HoldingWithPriceResult cedear = holdingResult("AAPL", AssetType.CEDEAR, USD,
+                new BigDecimal("2"), new BigDecimal("150"), new BigDecimal("180"));
+        when(getHoldingsWithPricesUseCase.execute(any())).thenReturn(List.of(stockA, stockB, bond, cedear));
+
+        PortfolioSummaryResult result = useCase.execute(new GetPortfolioSummaryCommand(USER_ID));
+
+        Map<String, CurrencyTotals> byCurrency = result.byCurrency().stream()
+                .collect(Collectors.toMap(t -> t.currency().getCurrencyCode(), Function.identity()));
+        List<AllocationBreakdownResult> ars = byCurrency.get("ARS").breakdown();
+        assertThat(ars).extracting(AllocationBreakdownResult::assetType)
+                .containsExactly(AssetType.BOND, AssetType.STOCK);
+        AllocationBreakdownResult bonds = ars.get(0);
+        assertThat(bonds.totalValue().amount()).isEqualByComparingTo("150");
+        assertThat(bonds.totalCost().amount()).isEqualByComparingTo("100");
+        assertThat(bonds.totalPl().amount()).isEqualByComparingTo("50");
+        assertThat(bonds.percentage()).isEqualByComparingTo("6.3800");
+        assertThat(bonds.count()).isEqualTo(1);
+        AllocationBreakdownResult stocks = ars.get(1);
+        assertThat(stocks.totalValue().amount()).isEqualByComparingTo("2200");
+        assertThat(stocks.totalCost().amount()).isEqualByComparingTo("2000");
+        assertThat(stocks.totalPl().amount()).isEqualByComparingTo("200");
+        assertThat(stocks.percentage()).isEqualByComparingTo("93.6200");
+        assertThat(stocks.count()).isEqualTo(2);
+        assertThat(stocks.totalValue().currency()).isEqualTo(ARS);
+
+        AllocationBreakdownResult usdCedears = byCurrency.get("USD").breakdown().get(0);
+        assertThat(usdCedears.assetType()).isEqualTo(AssetType.CEDEAR);
+        assertThat(usdCedears.totalValue().amount()).isEqualByComparingTo("360");
+        assertThat(usdCedears.totalCost().amount()).isEqualByComparingTo("300");
+        assertThat(usdCedears.totalPl().amount()).isEqualByComparingTo("60");
+        assertThat(usdCedears.totalPl().currency()).isEqualTo(USD);
+        assertThat(usdCedears.percentage()).isEqualByComparingTo("100.0000");
+        assertThat(usdCedears.count()).isEqualTo(1);
+    }
+
     private static HoldingWithPriceResult holdingResult(
             String ticker, Currency currency, BigDecimal qty, BigDecimal avgPrice, BigDecimal price) {
+        return holdingResult(ticker, AssetType.STOCK, currency, qty, avgPrice, price);
+    }
+
+    private static HoldingWithPriceResult holdingResult(String ticker, AssetType assetType, Currency currency,
+                                                        BigDecimal qty, BigDecimal avgPrice, BigDecimal price) {
         Holding holding = new Holding(
                 new HoldingId(1L),
                 USER_ID,
                 new BankNumber("007"),
                 new Ticker(ticker),
                 "Test " + ticker,
-                AssetType.STOCK,
+                assetType,
                 new HoldingQuantity(qty),
                 new Money(avgPrice, currency),
                 ThresholdConfig.disabled(),
@@ -137,7 +190,7 @@ class GetPortfolioSummaryUseCaseImplTest {
         BigDecimal costBasis = avgPrice.multiply(qty);
         BigDecimal plAmount = currentValue.subtract(costBasis);
         BigDecimal plPercent = costBasis.compareTo(BigDecimal.ZERO) != 0
-                ? plAmount.divide(costBasis, 4, java.math.RoundingMode.HALF_UP)
+                ? plAmount.divide(costBasis, 4, RoundingMode.HALF_UP)
                         .multiply(BigDecimal.valueOf(100))
                 : BigDecimal.ZERO;
         return new HoldingWithPriceResult(holding, price, currentValue, plAmount, plPercent);
