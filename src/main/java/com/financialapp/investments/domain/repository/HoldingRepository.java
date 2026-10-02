@@ -18,6 +18,8 @@ public interface HoldingRepository {
 
     Optional<Holding> findByIdAndUserId(HoldingId id, UserId userId);
 
+    Optional<Holding> findByIdAndUserIdForUpdate(HoldingId id, UserId userId);
+
     PageResult<Holding> findFiltered(HoldingFilter filter, PageRequest pageRequest);
 
     List<Holding> findByUserId(UserId userId);

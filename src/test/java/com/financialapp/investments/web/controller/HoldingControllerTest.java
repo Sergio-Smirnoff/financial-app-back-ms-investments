@@ -1,14 +1,18 @@
 package com.financialapp.investments.web.controller;
 
 import com.financialapp.investments.domain.common.model.BankNumber;
+import com.financialapp.commons.core.domain.model.Cbu;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.financialapp.investments.domain.usecase.holding.command.CreateHoldingCommand;
+import com.financialapp.investments.domain.usecase.holding.command.SellHoldingCommand;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.usecase.holding.*;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.exception.ResourceNotFoundException;
 import com.financialapp.investments.domain.exception.holding.HoldingQuantityNonPositiveException;
+import com.financialapp.investments.domain.exception.holding.HoldingSaleExceedsQuantityException;
 import com.financialapp.investments.domain.gateway.SupportedCurrencies;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
@@ -16,6 +20,7 @@ import com.financialapp.investments.web.dto.request.HoldingRequest;
 import com.financialapp.investments.web.mapper.HoldingWebMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -31,8 +36,10 @@ import java.util.Currency;
 import java.util.List;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -47,7 +54,7 @@ class HoldingControllerTest {
 
     @MockBean CreateHoldingUseCase createHoldingUseCase;
     @MockBean UpdateHoldingUseCase updateHoldingUseCase;
-    @MockBean CloseHoldingUseCase closeHoldingUseCase;
+    @MockBean SellHoldingUseCase sellHoldingUseCase;
     @MockBean ListHoldingsUseCase listHoldingsUseCase;
     @MockBean GetAccountValuationUseCase getAccountValuationUseCase;
     @MockBean SupportedCurrencies supportedCurrencies;
@@ -151,7 +158,7 @@ class HoldingControllerTest {
     @Test
     void delete_holdingNotFound_returns404WithErrorResponse() throws Exception {
         doThrow(new ResourceNotFoundException("Holding not found with id: 99"))
-                .when(closeHoldingUseCase).execute(any());
+                .when(sellHoldingUseCase).execute(any());
 
         mockMvc.perform(delete(BASE_URL + "/99")
                         .header("X-Internal-Token", TOKEN)
@@ -160,6 +167,119 @@ class HoldingControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("resource_not_found"))
                 .andExpect(jsonPath("$.message").value("Holding not found with id: 99"));
+    }
+
+    @Test
+    void delete_sellsEveryUnitAtTheMarketPrice() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/1")
+                        .param("destinationCbu", "0070009000000000000099")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
+        verify(sellHoldingUseCase).execute(command.capture());
+        assertThat(command.getValue().quantity()).isNull();
+        assertThat(command.getValue().manualQuote()).isNull();
+        assertThat(command.getValue().destinationCbu()).isEqualTo(new Cbu("0070009000000000000099"));
+    }
+
+    @Test
+    void sell_part_returns200WithTheSale() throws Exception {
+        when(sellHoldingUseCase.execute(any())).thenReturn(new HoldingSaleResult(
+                Money.of(new BigDecimal("800"), "ARS"), Money.of(new BigDecimal("790"), "ARS"),
+                new HoldingQuantity(new BigDecimal("4")), new HoldingQuantity(new BigDecimal("6"))));
+
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":4,\"price\":200,\"destinationCbu\":\"0070009000000000000099\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.holdingId").value(1))
+                .andExpect(jsonPath("$.data.soldQuantity").value("4"))
+                .andExpect(jsonPath("$.data.remainingQuantity").value("6"))
+                .andExpect(jsonPath("$.data.proceeds").value("800"))
+                .andExpect(jsonPath("$.data.bookedAmount").value("790"))
+                .andExpect(jsonPath("$.data.currency").value("ARS"))
+                .andExpect(jsonPath("$.data.closed").value(false));
+
+        ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
+        verify(sellHoldingUseCase).execute(command.capture());
+        assertThat(command.getValue().quantity().value()).isEqualByComparingTo("4");
+        assertThat(command.getValue().manualQuote()).isEqualByComparingTo("200");
+    }
+
+    @Test
+    void sell_withoutAPrice_asksForTheMarketPrice() throws Exception {
+        when(sellHoldingUseCase.execute(any())).thenReturn(new HoldingSaleResult(
+                Money.of(new BigDecimal("2000"), "ARS"), Money.of(new BigDecimal("2000"), "ARS"),
+                new HoldingQuantity(new BigDecimal("10")), null));
+
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":10}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.remainingQuantity").value("0"))
+                .andExpect(jsonPath("$.data.closed").value(true));
+
+        ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
+        verify(sellHoldingUseCase).execute(command.capture());
+        assertThat(command.getValue().manualQuote()).isNull();
+        assertThat(command.getValue().destinationCbu()).isNull();
+    }
+
+    @Test
+    void sell_withoutAQuantity_returns400() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price\":200}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+    }
+
+    @Test
+    void sell_aZeroPrice_returns400() throws Exception {
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":1,\"price\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+    }
+
+    @Test
+    void sell_moreThanHeld_returns422() throws Exception {
+        doThrow(new HoldingSaleExceedsQuantityException(
+                new HoldingQuantity(new BigDecimal("11")), new HoldingQuantity(new BigDecimal("10"))))
+                .when(sellHoldingUseCase).execute(any());
+
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":11,\"price\":200}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("holding_sale_exceeds_quantity"))
+                .andExpect(jsonPath("$.message").value("Cannot sell 11 units of a holding of 10"));
+    }
+
+    @Test
+    void sell_holdingNotFound_returns404() throws Exception {
+        doThrow(new ResourceNotFoundException("Holding not found: 99")).when(sellHoldingUseCase).execute(any());
+
+        mockMvc.perform(post(BASE_URL + "/99/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":1}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("resource_not_found"));
     }
 
     // --- helpers ---

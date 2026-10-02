@@ -11,7 +11,8 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 | GET | `/api/v1/investments/holdings/valuation` | Derived investment read-model valuation (`?bankNumber=&currency=`) | `invalid_bank_number`, `invalid_currency` |
 | POST | `/api/v1/investments/holdings` | Create holding (records buy transaction in ms-finances if `fundingCbu` set) | `resource_already_exists`, `invalid_ticker`, `finances_service_unavailable` |
 | PUT | `/api/v1/investments/holdings/{id}` | Update ticker, asset type, quantity, average purchase price or thresholds | `resource_not_found`, `invalid_quantity` |
-| DELETE | `/api/v1/investments/holdings/{id}` | Close/sell holding (records proceeds in ms-finances if `destinationCbu` set) | `resource_not_found`, `finances_service_unavailable` |
+| DELETE | `/api/v1/investments/holdings/{id}` | Close/sell every unit at the market price (same use case as `POST …/sell`; records proceeds in ms-finances if `destinationCbu` set) | `resource_not_found`, `finances_service_unavailable` |
+| POST | `/api/v1/investments/holdings/{id}/sell` | Sell part or all of a holding. Body `{quantity, price?, destinationCbu?}`: `price` absent → stored market quote (cost fallback), present → that quote in the holding's currency (bonds: per 100 VN, like the market quote). Books `quantity × price`, net of the broker fee schedule, to `destinationCbu` in ms-finances; a partial sale keeps the average cost; selling every unit deletes the holding. → `{holdingId, soldQuantity, remainingQuantity, proceeds, bookedAmount, currency, closed}` | `validation_error`, `resource_not_found`, `holding_sale_exceeds_quantity`, `finances_service_unavailable` |
 | GET | `/api/v1/investments/portfolio/summary` | Aggregated portfolio valuation, total P&L, allocation breakdown | — |
 | GET | `/api/v1/investments/portfolio/holdings` | List holdings enriched with live prices and P&L % | — |
 | GET | `/api/v1/investments/portfolio/holdings/{id}` | Single holding detail with live price and P&L % | `resource_not_found` |
@@ -45,6 +46,7 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 | `resource_conflict` | 409 | Operation conflicts with current holding state |
 | `holding_quantity_non_positive` | 422 | Quantity is zero or negative |
 | `holding_currency_mismatch` | 422 | Purchase currency differs from existing asset currency |
+| `holding_sale_exceeds_quantity` | 422 | A sell asks for more units than the holding has |
 | `invalid_ticker` | 400 | Ticker symbol contains invalid characters |
 | `invalid_bank_number` | 400 | Bank number is not 3 digits |
 | `invalid_fee_schedule` | 400 | Fee percentage outside `[0, 100]` |

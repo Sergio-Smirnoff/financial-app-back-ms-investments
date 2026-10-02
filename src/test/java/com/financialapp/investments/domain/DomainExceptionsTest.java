@@ -9,8 +9,11 @@ import com.financialapp.investments.domain.exception.ResourceNotFoundException;
 import com.financialapp.investments.domain.exception.UnsupportedCurrencyException;
 import com.financialapp.investments.domain.exception.holding.HoldingCurrencyMismatchException;
 import com.financialapp.investments.domain.exception.holding.HoldingQuantityNonPositiveException;
+import com.financialapp.investments.domain.exception.holding.HoldingSaleExceedsQuantityException;
+import com.financialapp.investments.domain.model.holding.HoldingQuantity;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Set;
 
@@ -86,5 +89,13 @@ class DomainExceptionsTest {
         HoldingQuantityNonPositiveException e = new HoldingQuantityNonPositiveException();
         assertThat(e.getError()).isEqualTo(DomainError.HOLDING_QUANTITY_INVALID);
         assertThat(e.getMessage()).contains("greater than zero");
+    }
+
+    @Test
+    void holdingSaleExceedsQuantity_mapsError() {
+        HoldingSaleExceedsQuantityException e = new HoldingSaleExceedsQuantityException(
+                new HoldingQuantity(new BigDecimal("11")), new HoldingQuantity(new BigDecimal("10")));
+        assertThat(e.getError()).isEqualTo(DomainError.HOLDING_SALE_EXCEEDS_QUANTITY);
+        assertThat(e.getError().code()).isEqualTo("holding_sale_exceeds_quantity");
     }
 }

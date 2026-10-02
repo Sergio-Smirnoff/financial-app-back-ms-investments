@@ -2,6 +2,7 @@ package com.financialapp.investments.web.controller;
 
 import com.financialapp.investments.domain.usecase.holding.command.*;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.usecase.holding.*;
 import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.commons.core.domain.model.Cbu;
@@ -16,8 +17,10 @@ import com.financialapp.commons.core.response.ApiResponse;
 import com.financialapp.commons.web.openapi.ApiErrorCodes;
 import com.financialapp.investments.domain.exception.DomainError;
 import com.financialapp.investments.web.dto.request.HoldingRequest;
+import com.financialapp.investments.web.dto.request.SellHoldingRequest;
 import com.financialapp.investments.web.dto.response.AccountValuationResponse;
 import com.financialapp.investments.web.dto.response.HoldingResponse;
+import com.financialapp.investments.web.dto.response.HoldingSaleResponse;
 import com.financialapp.investments.web.mapper.HoldingWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,7 +45,7 @@ public class HoldingController {
 
     private final CreateHoldingUseCase createHoldingUseCase;
     private final UpdateHoldingUseCase updateHoldingUseCase;
-    private final CloseHoldingUseCase closeHoldingUseCase;
+    private final SellHoldingUseCase sellHoldingUseCase;
     private final ListHoldingsUseCase listHoldingsUseCase;
     private final GetAccountValuationUseCase getAccountValuationUseCase;
     private final HoldingWebMapper holdingWebMapper;
@@ -104,11 +107,29 @@ public class HoldingController {
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
             @RequestParam(required = false) String destinationCbu) {
-        closeHoldingUseCase.execute(new CloseHoldingCommand(
+        sellHoldingUseCase.execute(new SellHoldingCommand(
                 new UserId(userId),
                 new HoldingId(id),
+                null,
+                null,
                 destinationCbu != null ? new Cbu(destinationCbu) : null));
         return ResponseEntity.ok(ApiResponse.ok("Holding deleted", null));
+    }
+
+    @PostMapping("/{id}/sell")
+    @Operation(summary = "Sell part or all of a holding at the market price or a manual price")
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "holding_quantity_invalid", "holding_sale_exceeds_quantity", "finances_service_unavailable"})
+    public ResponseEntity<ApiResponse<HoldingSaleResponse>> sell(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody SellHoldingRequest request) {
+        HoldingSaleResult sale = sellHoldingUseCase.execute(new SellHoldingCommand(
+                new UserId(userId),
+                new HoldingId(id),
+                new HoldingQuantity(request.getQuantity()),
+                request.getPrice(),
+                request.getDestinationCbu() != null ? new Cbu(request.getDestinationCbu()) : null));
+        return ResponseEntity.ok(ApiResponse.ok(holdingWebMapper.toSaleResponse(id, sale)));
     }
 
     private CreateHoldingCommand toCreateCommand(Long userId, HoldingRequest req) {

@@ -12,13 +12,14 @@ import com.financialapp.investments.domain.model.holding.NotificationTimestamps;
 import com.financialapp.investments.domain.model.holding.ThresholdConfig;
 import com.financialapp.investments.domain.model.holding.Ticker;
 import com.financialapp.investments.domain.model.price.AssetType;
-import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.command.CreateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.command.GetAccountValuationCommand;
 import com.financialapp.investments.domain.usecase.holding.command.GetHoldingDetailCommand;
 import com.financialapp.investments.domain.usecase.holding.command.ListHoldingsCommand;
+import com.financialapp.investments.domain.usecase.holding.command.SellHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
 import com.financialapp.investments.domain.model.history.PriceSeries;
 import com.financialapp.investments.domain.model.market.PriceRange;
@@ -62,8 +63,11 @@ class CommandsAndResponsesTest {
 
     @Test
     void holdingCommands_accessors() {
-        CloseHoldingCommand c = new CloseHoldingCommand(USER, HID, ACC);
+        SellHoldingCommand c = new SellHoldingCommand(USER, HID, QTY, new BigDecimal("200"), ACC);
         assertThat(c.destinationCbu()).isEqualTo(ACC);
+        assertThat(c.manualQuote()).isEqualByComparingTo("200");
+        assertThat(new HoldingSaleResult(ARS, ARS, QTY, null).closed()).isTrue();
+        assertThat(new HoldingSaleResult(ARS, ARS, QTY, QTY).closed()).isFalse();
 
         CreateHoldingCommand cr = new CreateHoldingCommand(USER, BANK, TIC, "n",
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);

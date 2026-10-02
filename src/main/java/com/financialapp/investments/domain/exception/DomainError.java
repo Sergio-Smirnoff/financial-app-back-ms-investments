@@ -10,6 +10,7 @@ public enum DomainError implements ErrorCode {
     RESOURCE_CONFLICT(ErrorCategory.CONFLICT, "resource_conflict"),
     HOLDING_QUANTITY_INVALID(ErrorCategory.UNPROCESSABLE, "holding_quantity_invalid"),
     HOLDING_CURRENCY_MISMATCH(ErrorCategory.UNPROCESSABLE, "holding_currency_mismatch"),
+    HOLDING_SALE_EXCEEDS_QUANTITY(ErrorCategory.UNPROCESSABLE, "holding_sale_exceeds_quantity"),
     UNSUPPORTED_CURRENCY(ErrorCategory.UNPROCESSABLE, "unsupported_currency"),
     INVALID_BANK_NUMBER(ErrorCategory.BAD_REQUEST, "invalid_bank_number"),
     INVALID_FX_RATE(ErrorCategory.BAD_REQUEST, "invalid_fx_rate"),

@@ -3,6 +3,7 @@ package com.financialapp.investments.domain.model.holding;
 import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
+import com.financialapp.investments.domain.exception.holding.HoldingSaleExceedsQuantityException;
 import com.financialapp.investments.domain.model.price.AssetType;
 
 import java.time.LocalDateTime;
@@ -50,12 +51,29 @@ public record Holding(
         return avgPurchasePrice.multiply(quantity.value());
     }
 
+    public Money saleProceeds(Money quote, HoldingQuantity sold) {
+        return new Money(assetType.marketValue(quote.amount(), sold.value()), quote.currency());
+    }
+
+    public boolean isFullySoldBy(HoldingQuantity sold) {
+        return sold.value().compareTo(quantity.value()) == 0;
+    }
+
+    public Holding afterSelling(HoldingQuantity sold) {
+        if (sold.value().compareTo(quantity.value()) > 0) {
+            throw new HoldingSaleExceedsQuantityException(sold, quantity);
+        }
+        return new Holding(id, userId, bankNumber, ticker, name, assetType,
+                new HoldingQuantity(quantity.value().subtract(sold.value())), avgPurchasePrice,
+                thresholdConfig, notificationTimestamps, createdAt, LocalDateTime.now());
+    }
+
     public Money unitPrice(Money quote) {
         return new Money(assetType.unitPrice(quote.amount()), quote.currency());
     }
 
     public Money marketValue(Money quote) {
-        return new Money(assetType.marketValue(quote.amount(), quantity.value()), quote.currency());
+        return saleProceeds(quote, quantity);
     }
 
     public PositionValuation valuation(Money quote) {

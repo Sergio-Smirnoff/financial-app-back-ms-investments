@@ -2,10 +2,13 @@ package com.financialapp.investments.infrastructure.persistence.jpa;
 
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.infrastructure.persistence.entity.HoldingJpaEntity;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +23,10 @@ public interface HoldingJpaRepository extends JpaRepository<HoldingJpaEntity, Lo
             Long userId, AssetType assetType, Pageable pageable);
 
     Optional<HoldingJpaEntity> findByIdAndUserId(Long id, Long userId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT h FROM HoldingJpaEntity h WHERE h.id = :id AND h.userId = :userId")
+    Optional<HoldingJpaEntity> findByIdAndUserIdForUpdate(@Param("id") Long id, @Param("userId") Long userId);
 
     List<HoldingJpaEntity> findByUserIdAndBankNumberAndCurrency(Long userId, String bankNumber, String currency);
 

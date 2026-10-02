@@ -12,6 +12,7 @@ import com.financialapp.investments.domain.usecase.market.response.TickerSearchR
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.model.history.PriceSeries;
 import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
@@ -24,6 +25,7 @@ import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioS
 import com.financialapp.investments.web.dto.response.AccountValuationResponse;
 import com.financialapp.investments.web.dto.response.HoldingDetailResponse;
 import com.financialapp.investments.web.dto.response.HoldingResponse;
+import com.financialapp.investments.web.dto.response.HoldingSaleResponse;
 import com.financialapp.investments.web.dto.response.HoldingWithPriceResponse;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
 import com.financialapp.investments.web.dto.response.PortfolioEvolutionResponse;
@@ -304,5 +306,26 @@ class WebMappersTest {
         assertThat(r.getCurrentPrice()).isNull();
         assertThat(r.getVariation()).isNull();
         assertThat(r.getSeries()).isEmpty();
+    }
+
+    @Test
+    void holdingSale_mapsAPartialAndAFullSale() {
+        HoldingSaleResult part = new HoldingSaleResult(
+                Money.of(new BigDecimal("800"), "ARS"), Money.of(new BigDecimal("790"), "ARS"),
+                new HoldingQuantity(new BigDecimal("4")), new HoldingQuantity(new BigDecimal("6")));
+        HoldingSaleResult all = new HoldingSaleResult(
+                Money.of(new BigDecimal("800"), "USD"), Money.of(new BigDecimal("800"), "USD"),
+                new HoldingQuantity(new BigDecimal("4")), null);
+
+        HoldingSaleResponse partResponse = holdingMapper.toSaleResponse(7L, part);
+        HoldingSaleResponse allResponse = holdingMapper.toSaleResponse(7L, all);
+
+        assertThat(partResponse.getHoldingId()).isEqualTo(7L);
+        assertThat(partResponse.getRemainingQuantity()).isEqualTo("6");
+        assertThat(partResponse.getBookedAmount()).isEqualTo("790");
+        assertThat(partResponse.isClosed()).isFalse();
+        assertThat(allResponse.getRemainingQuantity()).isEqualTo("0");
+        assertThat(allResponse.getCurrency()).isEqualTo("USD");
+        assertThat(allResponse.isClosed()).isTrue();
     }
 }
