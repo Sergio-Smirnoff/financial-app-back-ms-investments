@@ -47,8 +47,10 @@ public class HoldingRequest {
     private String currency;
 
     @PositiveOrZero(message = "Gain threshold must be zero or positive")
+    @Digits(integer = 3, fraction = 2, message = "Gain threshold allows at most 3 integer digits and 2 decimals")
     private BigDecimal notifyGainThresholdPct;
 
     @PositiveOrZero(message = "Loss threshold must be zero or positive")
+    @Digits(integer = 3, fraction = 2, message = "Loss threshold allows at most 3 integer digits and 2 decimals")
     private BigDecimal notifyLossThresholdPct;
 }

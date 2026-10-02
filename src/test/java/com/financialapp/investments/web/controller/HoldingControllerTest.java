@@ -162,6 +162,71 @@ class HoldingControllerTest {
     }
 
     @Test
+    void create_aGainThresholdOfFourIntegerDigits_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setNotifyGainThresholdPct(new BigDecimal("1000"));
+
+        mockMvc.perform(post(BASE_URL)
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(createHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void create_aLossThresholdWithThreeDecimals_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setNotifyLossThresholdPct(new BigDecimal("1.234"));
+
+        mockMvc.perform(post(BASE_URL)
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(createHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void update_aThresholdWithThreeDecimals_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setNotifyGainThresholdPct(new BigDecimal("1.234"));
+
+        mockMvc.perform(put(BASE_URL + "/1")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(updateHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void create_thresholdsThatFitTheColumn_areAccepted() throws Exception {
+        when(createHoldingUseCase.execute(any(CreateHoldingCommand.class))).thenReturn(sampleHolding());
+        HoldingRequest request = validRequest();
+        request.setNotifyGainThresholdPct(new BigDecimal("12.5"));
+        request.setNotifyLossThresholdPct(new BigDecimal("999.99"));
+
+        mockMvc.perform(post(BASE_URL)
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        verify(createHoldingUseCase).execute(any(CreateHoldingCommand.class));
+    }
+
+    @Test
     void create_useCaseThrowsQuantityError_returns422WithErrorResponse() throws Exception {
         when(createHoldingUseCase.execute(any())).thenThrow(new HoldingQuantityNonPositiveException());
 
