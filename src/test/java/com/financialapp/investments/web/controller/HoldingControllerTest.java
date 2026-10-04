@@ -160,7 +160,6 @@ class HoldingControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("validation_error"));
 
-
         verify(createHoldingUseCase, never()).execute(any());
     }
 
@@ -178,13 +177,48 @@ class HoldingControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
 
-        verify(createHoldingUseCase).execute(any(CreateHoldingCommand.class));
+        ArgumentCaptor<CreateHoldingCommand> command = ArgumentCaptor.forClass(CreateHoldingCommand.class);
+        verify(createHoldingUseCase).execute(command.capture());
+        assertThat(command.getValue().quantity().value()).isEqualByComparingTo("999999999999.999999");
+        assertThat(command.getValue().avgPurchasePrice().amount()).isEqualByComparingTo("999999999999.999999");
+    }
+
+    @Test
+    void create_trailingZerosCountTowardTheSixDecimals_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setQuantity(new BigDecimal("1.1000000"));
+
+        mockMvc.perform(post(BASE_URL)
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(createHoldingUseCase, never()).execute(any());
     }
 
     @Test
     void update_aQuantityWithMoreThanSixDecimals_returns400() throws Exception {
         HoldingRequest request = validRequest();
         request.setQuantity(new BigDecimal("1.0000001"));
+
+        mockMvc.perform(put(BASE_URL + "/1")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+
+        verify(updateHoldingUseCase, never()).execute(any());
+    }
+
+    @Test
+    void update_trailingZerosCountTowardTheSixDecimals_returns400() throws Exception {
+        HoldingRequest request = validRequest();
+        request.setQuantity(new BigDecimal("1.1000000"));
 
         mockMvc.perform(put(BASE_URL + "/1")
                         .header("X-Internal-Token", TOKEN)
@@ -437,7 +471,6 @@ class HoldingControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("validation_error"));
 
-
         verify(sellHoldingUseCase, never()).execute(any());
     }
 
@@ -491,6 +524,25 @@ class HoldingControllerTest {
         verify(sellHoldingUseCase).execute(command.capture());
         assertThat(command.getValue().quantity().value()).isEqualByComparingTo("4");
         assertThat(command.getValue().manualQuote()).isEqualByComparingTo("10.5");
+    }
+
+    @Test
+    void sell_decimalNumbers_deserializeAndReturn200() throws Exception {
+        when(sellHoldingUseCase.execute(any())).thenReturn(new HoldingSaleResult(
+                Money.of(new BigDecimal("42"), "ARS"), Money.of(new BigDecimal("42"), "ARS"),
+                new HoldingQuantity(new BigDecimal("1.5")), new HoldingQuantity(new BigDecimal("8.5"))));
+
+        mockMvc.perform(post(BASE_URL + "/1/sell")
+                        .header("X-Internal-Token", TOKEN)
+                        .header("X-User-Id", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":1.5,\"price\":10.25}"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
+        verify(sellHoldingUseCase).execute(command.capture());
+        assertThat(command.getValue().quantity().value()).isEqualTo(new BigDecimal("1.5"));
+        assertThat(command.getValue().manualQuote()).isEqualTo(new BigDecimal("10.25"));
     }
 
     @Test

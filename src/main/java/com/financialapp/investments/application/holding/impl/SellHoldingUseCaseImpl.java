@@ -35,6 +35,7 @@ public class SellHoldingUseCaseImpl implements SellHoldingUseCase {
     private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
     private final BrokerFeeScheduleRepository brokerFeeScheduleRepository;
+    private final BrokerFeeNetting brokerFeeNetting;
 
     @Override
     public HoldingSaleResult execute(SellHoldingCommand command) {
@@ -86,7 +87,7 @@ public class SellHoldingUseCaseImpl implements SellHoldingUseCase {
         BrokerFeeSchedule schedule = brokerFeeScheduleRepository
                 .findFor(holding.bankNumber(), holding.assetType())
                 .orElse(null);
-        NetPositionResult sellNet = new BrokerFeeNetting().apply(proceeds, proceeds, schedule, TradeSide.SELL);
+        NetPositionResult sellNet = brokerFeeNetting.apply(proceeds, proceeds, schedule, TradeSide.SELL);
         return sellNet.feeExceedsGross()
                 ? Money.zero(proceeds.currency().getCurrencyCode())
                 : sellNet.netMagnitude();

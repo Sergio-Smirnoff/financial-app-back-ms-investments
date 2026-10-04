@@ -22,12 +22,13 @@ import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
 import com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
+import com.financialapp.investments.domain.service.BrokerFeeNetting;
 import com.financialapp.investments.domain.usecase.holding.command.SellHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -53,10 +54,16 @@ class SellHoldingUseCaseImplTest {
     @Mock private DomainEventPublisher eventPublisher;
     @Mock private BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
-    @InjectMocks private SellHoldingUseCaseImpl useCase;
+    private SellHoldingUseCaseImpl useCase;
 
     private static final UserId USER_ID = new UserId(1L);
     private static final Cbu DESTINATION_CBU = new Cbu("0070009000000000000099");
+
+    @BeforeEach
+    void setUp() {
+        useCase = new SellHoldingUseCaseImpl(holdingRepository, assetPriceRepository, financesGateway,
+                eventPublisher, brokerFeeScheduleRepository, new BrokerFeeNetting());
+    }
 
     @Test
     void sellAll_recordsSaleProceeds_andPublishesTheClosedEvent() {

@@ -28,6 +28,7 @@ public class CreateHoldingUseCaseImpl implements CreateHoldingUseCase {
     private final FinancesGateway financesGateway;
     private final DomainEventPublisher eventPublisher;
     private final BrokerFeeScheduleRepository brokerFeeScheduleRepository;
+    private final BrokerFeeNetting brokerFeeNetting;
 
     @Override
     public Holding execute(CreateHoldingCommand command) {
@@ -46,7 +47,7 @@ public class CreateHoldingUseCaseImpl implements CreateHoldingUseCase {
         BrokerFeeSchedule schedule = brokerFeeScheduleRepository
                 .findFor(command.bankNumber(), command.assetType())
                 .orElse(null);
-        NetPositionResult buyNet = new BrokerFeeNetting().apply(totalCost, totalCost, schedule, TradeSide.BUY);
+        NetPositionResult buyNet = brokerFeeNetting.apply(totalCost, totalCost, schedule, TradeSide.BUY);
         Money bookedAmount = buyNet.totalFee().amount().signum() > 0 ? totalCost.add(buyNet.totalFee()) : totalCost;
 
         if (command.fundingCbu() != null) {
