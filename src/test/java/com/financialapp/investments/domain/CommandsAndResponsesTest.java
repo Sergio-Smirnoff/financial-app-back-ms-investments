@@ -8,6 +8,7 @@ import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
+import com.financialapp.investments.domain.model.holding.ManualQuote;
 import com.financialapp.investments.domain.model.holding.NotificationTimestamps;
 import com.financialapp.investments.domain.model.holding.ThresholdConfig;
 import com.financialapp.investments.domain.model.holding.Ticker;
@@ -63,9 +64,9 @@ class CommandsAndResponsesTest {
 
     @Test
     void holdingCommands_accessors() {
-        SellHoldingCommand c = new SellHoldingCommand(USER, HID, QTY, new BigDecimal("200"), ACC);
+        SellHoldingCommand c = new SellHoldingCommand(USER, HID, QTY, new ManualQuote(new BigDecimal("200")), ACC);
         assertThat(c.destinationCbu()).isEqualTo(ACC);
-        assertThat(c.manualQuote()).isEqualByComparingTo("200");
+        assertThat(c.manualQuote().value()).isEqualByComparingTo("200");
         assertThat(new HoldingSaleResult(ARS, ARS, QTY, null).closed()).isTrue();
         assertThat(new HoldingSaleResult(ARS, ARS, QTY, QTY).closed()).isFalse();
 
@@ -78,7 +79,8 @@ class CommandsAndResponsesTest {
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
         assertThat(up.newQuantity()).isEqualTo(QTY);
 
-        GetAccountValuationCommand g = new GetAccountValuationCommand(USER, BANK, java.util.Currency.getInstance("ARS"));
+        GetAccountValuationCommand g = new GetAccountValuationCommand(
+                USER, BANK, java.util.Currency.getInstance("ARS"));
         assertThat(g.bankNumber()).isEqualTo(BANK);
 
         GetHoldingDetailCommand d = new GetHoldingDetailCommand(USER, HID);
@@ -130,7 +132,8 @@ class CommandsAndResponsesTest {
                 LocalDateTime.of(2026, 6, 12, 10, 0)
         );
 
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(quote), new PriceSeries(List.of(point)));
+        TickerResearchResult result = new TickerResearchResult(
+                TIC, Optional.of(quote), new PriceSeries(List.of(point)));
         assertThat(result.ticker()).isEqualTo(TIC);
         assertThat(result.currentQuote()).isPresent();
         assertThat(result.currentQuote().get()).isEqualTo(quote);

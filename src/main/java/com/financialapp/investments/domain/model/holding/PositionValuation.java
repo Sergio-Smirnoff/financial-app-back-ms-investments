@@ -19,6 +19,10 @@ public record PositionValuation(Money marketValue, Money costBasis) {
         }
     }
 
+    public PositionValuation plus(PositionValuation other) {
+        return new PositionValuation(marketValue.add(other.marketValue), costBasis.add(other.costBasis));
+    }
+
     public Money profitAndLoss() {
         return marketValue.subtract(costBasis);
     }

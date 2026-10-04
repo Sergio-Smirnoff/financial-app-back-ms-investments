@@ -57,12 +57,14 @@ public class GetHoldingDetailUseCaseImpl implements GetHoldingDetailUseCase {
                 .map(price -> holding.valuation(new Money(price, currency)))
                 .orElseGet(holding::valuationAtCost);
 
-        NetPositionResult buyNet = brokerFeeNetting.apply(gross.costBasis(), gross.costBasis(), schedule, TradeSide.BUY);
+        NetPositionResult buyNet = brokerFeeNetting.apply(
+                gross.costBasis(), gross.costBasis(), schedule, TradeSide.BUY);
         Money netCostBasis = buyNet.totalFee().amount().signum() > 0
                 ? gross.costBasis().add(buyNet.totalFee())
                 : gross.costBasis();
 
-        NetPositionResult sellNet = brokerFeeNetting.apply(gross.marketValue(), gross.marketValue(), schedule, TradeSide.SELL);
+        NetPositionResult sellNet = brokerFeeNetting.apply(
+                gross.marketValue(), gross.marketValue(), schedule, TradeSide.SELL);
         Money netMarketValue = sellNet.feeExceedsGross()
                 ? Money.zero(currency.getCurrencyCode())
                 : sellNet.netMagnitude();

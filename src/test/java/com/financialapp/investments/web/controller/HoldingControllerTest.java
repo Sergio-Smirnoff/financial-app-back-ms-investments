@@ -389,7 +389,7 @@ class HoldingControllerTest {
         ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
         verify(sellHoldingUseCase).execute(command.capture());
         assertThat(command.getValue().quantity().value()).isEqualByComparingTo("4");
-        assertThat(command.getValue().manualQuote()).isEqualByComparingTo("200");
+        assertThat(command.getValue().manualQuote().value()).isEqualByComparingTo("200");
     }
 
     @Test
@@ -490,7 +490,7 @@ class HoldingControllerTest {
         ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
         verify(sellHoldingUseCase).execute(command.capture());
         assertThat(command.getValue().quantity().value()).isEqualByComparingTo("999999999999.999999");
-        assertThat(command.getValue().manualQuote()).isEqualByComparingTo("999999999999.999999");
+        assertThat(command.getValue().manualQuote().value()).isEqualByComparingTo("999999999999.999999");
     }
 
     @Test
@@ -523,7 +523,7 @@ class HoldingControllerTest {
         ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
         verify(sellHoldingUseCase).execute(command.capture());
         assertThat(command.getValue().quantity().value()).isEqualByComparingTo("4");
-        assertThat(command.getValue().manualQuote()).isEqualByComparingTo("10.5");
+        assertThat(command.getValue().manualQuote().value()).isEqualByComparingTo("10.5");
     }
 
     @Test
@@ -542,7 +542,7 @@ class HoldingControllerTest {
         ArgumentCaptor<SellHoldingCommand> command = ArgumentCaptor.forClass(SellHoldingCommand.class);
         verify(sellHoldingUseCase).execute(command.capture());
         assertThat(command.getValue().quantity().value()).isEqualTo(new BigDecimal("1.5"));
-        assertThat(command.getValue().manualQuote()).isEqualTo(new BigDecimal("10.25"));
+        assertThat(command.getValue().manualQuote().value()).isEqualTo(new BigDecimal("10.25"));
     }
 
     @Test

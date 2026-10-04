@@ -21,17 +21,22 @@ public final class BrokerFeeNetting {
         String currency = grossMagnitude.currency().getCurrencyCode();
 
         if (schedule == null) {
-            return new NetPositionResult(Money.zero(currency), Money.of(toCents(grossMagnitude.amount()), currency), false);
+            return new NetPositionResult(
+                    Money.zero(currency), Money.of(toCents(grossMagnitude.amount()), currency), false);
         }
 
         Money baseTradeValue = tradeValue != null ? tradeValue : grossMagnitude;
         BigDecimal tradeValAmount = baseTradeValue.amount();
 
         BigDecimal sidePct = (side == TradeSide.BUY ? schedule.buyFeePct() : schedule.sellFeePct());
-        BigDecimal sideFeeAmount = sidePct != null ? tradeValAmount.multiply(sidePct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN) : BigDecimal.ZERO;
+        BigDecimal sideFeeAmount = sidePct != null
+                ? tradeValAmount.multiply(sidePct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN)
+                : BigDecimal.ZERO;
 
         BigDecimal marketPct = schedule.marketFeePct();
-        BigDecimal marketFeeAmount = marketPct != null ? tradeValAmount.multiply(marketPct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN) : BigDecimal.ZERO;
+        BigDecimal marketFeeAmount = marketPct != null
+                ? tradeValAmount.multiply(marketPct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN)
+                : BigDecimal.ZERO;
 
         BigDecimal rawFeeAmount = sideFeeAmount.add(marketFeeAmount);
 

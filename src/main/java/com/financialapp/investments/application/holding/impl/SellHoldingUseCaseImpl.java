@@ -11,6 +11,7 @@ import com.financialapp.investments.domain.model.fee.NetPositionResult;
 import com.financialapp.investments.domain.model.fee.TradeSide;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
+import com.financialapp.investments.domain.model.holding.ManualQuote;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
 import com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
@@ -22,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -74,13 +74,13 @@ public class SellHoldingUseCaseImpl implements SellHoldingUseCase {
         return new HoldingSaleResult(proceeds, booked, sold, saved.quantity());
     }
 
-    private Money proceedsOf(Holding holding, HoldingQuantity sold, BigDecimal manualQuote) {
+    private Money proceedsOf(Holding holding, HoldingQuantity sold, ManualQuote manualQuote) {
         if (manualQuote != null) {
-            return holding.saleProceeds(new Money(manualQuote, holding.avgPurchasePrice().currency()), sold);
+            return holding.saleProceeds(manualQuote, sold);
         }
         return assetPriceRepository.findByTicker(holding.ticker())
                 .map(price -> holding.saleProceeds(Money.of(price.lastPrice(), price.currency()), sold))
-                .orElseGet(() -> holding.avgPurchasePrice().multiply(sold.value()));
+                .orElseGet(() -> holding.costBasisOf(sold));
     }
 
     private Money netOfBrokerFees(Holding holding, Money proceeds) {

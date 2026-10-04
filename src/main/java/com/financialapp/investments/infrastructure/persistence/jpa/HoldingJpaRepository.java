@@ -38,6 +38,7 @@ public interface HoldingJpaRepository extends JpaRepository<HoldingJpaEntity, Lo
     @Query("SELECT DISTINCT h.ticker FROM HoldingJpaEntity h")
     List<String> findDistinctTickers();
 
-    @Query("SELECT h FROM HoldingJpaEntity h WHERE h.notifyGainThresholdPct IS NOT NULL OR h.notifyLossThresholdPct IS NOT NULL")
+    @Query("SELECT h FROM HoldingJpaEntity h"
+            + " WHERE h.notifyGainThresholdPct IS NOT NULL OR h.notifyLossThresholdPct IS NOT NULL")
     List<HoldingJpaEntity> findHoldingsWithThresholds();
 }

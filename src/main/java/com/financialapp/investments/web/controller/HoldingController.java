@@ -80,7 +80,8 @@ public class HoldingController {
 
     @PostMapping
     @Operation(summary = "Create a new holding")
-    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_already_exists", "holding_quantity_invalid", "holding_currency_mismatch", "unsupported_currency", "banks_service_unavailable"})
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_already_exists", "holding_quantity_invalid",
+            "holding_currency_mismatch", "unsupported_currency", "banks_service_unavailable"})
     public ResponseEntity<ApiResponse<HoldingResponse>> create(
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody HoldingRequest request) {
@@ -91,7 +92,8 @@ public class HoldingController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a holding")
-    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "holding_quantity_invalid", "holding_currency_mismatch", "unsupported_currency"})
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "holding_quantity_invalid",
+            "holding_currency_mismatch", "unsupported_currency"})
     public ResponseEntity<ApiResponse<HoldingResponse>> update(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
@@ -102,7 +104,8 @@ public class HoldingController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete (Sell) a holding")
-    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "resource_conflict", "finances_service_unavailable"})
+    @ApiErrorCodes(catalog = DomainError.class,
+            value = {"resource_not_found", "resource_conflict", "finances_service_unavailable"})
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
@@ -118,7 +121,8 @@ public class HoldingController {
 
     @PostMapping("/{id}/sell")
     @Operation(summary = "Sell part or all of a holding at the market price or a manual price")
-    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "holding_quantity_invalid", "holding_sale_exceeds_quantity", "finances_service_unavailable"})
+    @ApiErrorCodes(catalog = DomainError.class, value = {"resource_not_found", "holding_quantity_invalid",
+            "holding_sale_exceeds_quantity", "finances_service_unavailable"})
     public ResponseEntity<ApiResponse<HoldingSaleResponse>> sell(
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
@@ -127,7 +131,7 @@ public class HoldingController {
                 new UserId(userId),
                 new HoldingId(id),
                 new HoldingQuantity(request.getQuantity()),
-                request.getPrice(),
+                request.getPrice() != null ? new ManualQuote(request.getPrice()) : null,
                 request.getDestinationCbu() != null ? new Cbu(request.getDestinationCbu()) : null));
         return ResponseEntity.ok(ApiResponse.ok(holdingWebMapper.toSaleResponse(id, sale)));
     }

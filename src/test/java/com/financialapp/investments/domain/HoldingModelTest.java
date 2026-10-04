@@ -160,11 +160,24 @@ class HoldingModelTest {
                 Money.of(new BigDecimal("1435.78"), "ARS"), ThresholdConfig.disabled(),
                 NotificationTimestamps.empty(), NOW, NOW);
 
-        assertThat(tenAt150().saleProceeds(Money.of(new BigDecimal("200"), "ARS"), new HoldingQuantity(new BigDecimal("4"))).amount())
+        assertThat(tenAt150().saleProceeds(
+                Money.of(new BigDecimal("200"), "ARS"), new HoldingQuantity(new BigDecimal("4"))).amount())
                 .isEqualByComparingTo("800");
-        assertThat(bond.saleProceeds(Money.of(new BigDecimal("131700"), "ARS"), new HoldingQuantity(new BigDecimal("100"))).amount())
+        assertThat(bond.saleProceeds(
+                Money.of(new BigDecimal("131700"), "ARS"), new HoldingQuantity(new BigDecimal("100"))).amount())
                 .isEqualByComparingTo("131700");
         assertThat(bond.marketValue(Money.of(new BigDecimal("131700"), "ARS")).amount())
                 .isEqualByComparingTo("904779.00");
+    }
+
+    @Test
+    void costBasisOf_isAverageCostTimesSoldQuantity_andCostBasisIsTheWholePosition() {
+        Holding holding = tenAt150();
+
+        Money soldCost = holding.costBasisOf(new HoldingQuantity(new BigDecimal("4")));
+
+        assertThat(soldCost.amount()).isEqualByComparingTo("600");
+        assertThat(soldCost.currency().getCurrencyCode()).isEqualTo("ARS");
+        assertThat(holding.costBasis()).isEqualTo(holding.costBasisOf(holding.quantity()));
     }
 }

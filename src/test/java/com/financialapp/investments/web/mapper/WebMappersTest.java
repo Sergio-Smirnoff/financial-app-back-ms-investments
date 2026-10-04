@@ -286,7 +286,8 @@ class WebMappersTest {
                 new BigDecimal("150.00"), new BigDecimal("143.00"),
                 new BigDecimal("900"), new BigDecimal("2.00"), "USD",
                 NOW.minusDays(1));
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(detail), new PriceSeries(List.of(point)));
+        TickerResearchResult result = new TickerResearchResult(
+                TIC, Optional.of(detail), new PriceSeries(List.of(point)));
         TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isEqualTo("USD");

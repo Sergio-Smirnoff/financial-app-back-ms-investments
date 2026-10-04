@@ -102,7 +102,7 @@ class SellHoldingUseCaseImplTest {
         when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), quote("200"), DESTINATION_CBU));
 
         verify(holdingRepository).findByIdAndUserIdForUpdate(holding.id(), USER_ID);
         verify(holdingRepository, never()).findByIdAndUserId(any(), any());
@@ -110,7 +110,8 @@ class SellHoldingUseCaseImplTest {
 
     @Test
     void sell_throwsResourceNotFound_whenTheHoldingIsNotTheCallers() {
-        when(holdingRepository.findByIdAndUserIdForUpdate(any(HoldingId.class), eq(USER_ID))).thenReturn(Optional.empty());
+        when(holdingRepository.findByIdAndUserIdForUpdate(any(HoldingId.class), eq(USER_ID)))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(
                 new SellHoldingCommand(USER_ID, new HoldingId(999L), null, null, DESTINATION_CBU)))
@@ -151,7 +152,8 @@ class SellHoldingUseCaseImplTest {
     void sellAll_booksBondProceedsPerHundredNominal() {
         Holding ao29 = bond(43L);
         when(holdingRepository.findByIdAndUserIdForUpdate(ao29.id(), USER_ID)).thenReturn(Optional.of(ao29));
-        when(assetPriceRepository.findByTicker(new Ticker("AO29"))).thenReturn(Optional.of(assetPrice("AO29", "131700")));
+        when(assetPriceRepository.findByTicker(new Ticker("AO29")))
+                .thenReturn(Optional.of(assetPrice("AO29", "131700")));
 
         useCase.execute(sellAll(ao29, DESTINATION_CBU));
 
@@ -176,7 +178,7 @@ class SellHoldingUseCaseImplTest {
         when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), quote("200"), DESTINATION_CBU));
 
         assertThat(bookedAmount()).isEqualByComparingTo("800");
         verify(assetPriceRepository, never()).findByTicker(any());
@@ -215,7 +217,7 @@ class SellHoldingUseCaseImplTest {
         when(holdingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new SellHoldingCommand(
-                USER_ID, ao29.id(), new HoldingQuantity(new BigDecimal("100")), new BigDecimal("131700"), DESTINATION_CBU));
+                USER_ID, ao29.id(), new HoldingQuantity(new BigDecimal("100")), quote("131700"), DESTINATION_CBU));
 
         assertThat(bookedAmount()).isEqualByComparingTo("131700");
     }
@@ -228,7 +230,7 @@ class SellHoldingUseCaseImplTest {
         when(brokerFeeScheduleRepository.findFor(any(), any())).thenReturn(Optional.empty());
 
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("7")), new BigDecimal("10.123"), DESTINATION_CBU));
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("7")), quote("10.123"), DESTINATION_CBU));
 
         assertThat(bookedAmount()).isEqualTo(new BigDecimal("70.86"));
         assertThat(sale.bookedAmount().amount()).isEqualTo(new BigDecimal("70.86"));
@@ -244,7 +246,7 @@ class SellHoldingUseCaseImplTest {
                 .thenReturn(Optional.of(feeSchedule("0.50", null)));
 
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), quote("200"), DESTINATION_CBU));
 
         assertThat(bookedAmount()).isEqualTo(new BigDecimal("796.00"));
         assertThat(sale.bookedAmount().amount()).isEqualTo(new BigDecimal("796.00"));
@@ -260,7 +262,7 @@ class SellHoldingUseCaseImplTest {
                 .thenReturn(Optional.of(feeSchedule("0.50", "1000.00")));
 
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), new BigDecimal("200"), DESTINATION_CBU));
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("4")), quote("200"), DESTINATION_CBU));
 
         verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
         ArgumentCaptor<Holding> saved = ArgumentCaptor.forClass(Holding.class);
@@ -279,7 +281,7 @@ class SellHoldingUseCaseImplTest {
         when(brokerFeeScheduleRepository.findFor(any(), any())).thenReturn(Optional.empty());
 
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("1")), new BigDecimal("0.004"), DESTINATION_CBU));
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("1")), quote("0.004"), DESTINATION_CBU));
 
         verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
         verify(holdingRepository).save(any());
@@ -295,7 +297,7 @@ class SellHoldingUseCaseImplTest {
                 .thenReturn(Optional.of(feeSchedule("0.50", "1000.00")));
 
         HoldingSaleResult sale = useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), null, new BigDecimal("50"), DESTINATION_CBU));
+                USER_ID, holding.id(), null, quote("50"), DESTINATION_CBU));
 
         verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
         verify(holdingRepository).delete(holding.id());
@@ -311,7 +313,7 @@ class SellHoldingUseCaseImplTest {
         when(holdingRepository.findByIdAndUserIdForUpdate(holding.id(), USER_ID)).thenReturn(Optional.of(holding));
 
         assertThatThrownBy(() -> useCase.execute(new SellHoldingCommand(
-                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("11")), new BigDecimal("200"), DESTINATION_CBU)))
+                USER_ID, holding.id(), new HoldingQuantity(new BigDecimal("11")), quote("200"), DESTINATION_CBU)))
                 .isInstanceOf(HoldingSaleExceedsQuantityException.class);
 
         verify(financesGateway, never()).recordSaleProceeds(any(), any(), any());
@@ -328,6 +330,10 @@ class SellHoldingUseCaseImplTest {
 
     private static SellHoldingCommand sellAll(Holding holding, Cbu destination) {
         return new SellHoldingCommand(USER_ID, holding.id(), null, null, destination);
+    }
+
+    private static ManualQuote quote(String value) {
+        return new ManualQuote(new BigDecimal(value));
     }
 
     private static Holding holding(String ticker, String quantity, String avgPrice) {

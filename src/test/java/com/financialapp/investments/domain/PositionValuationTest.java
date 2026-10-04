@@ -6,6 +6,7 @@ import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
+import com.financialapp.investments.domain.model.holding.ManualQuote;
 import com.financialapp.investments.domain.model.holding.NotificationTimestamps;
 import com.financialapp.investments.domain.model.holding.PositionValuation;
 import com.financialapp.investments.domain.model.holding.ThresholdConfig;
@@ -98,5 +99,48 @@ class PositionValuationTest {
         assertThatThrownBy(() -> new PositionValuation(
                 Money.of(BigDecimal.ONE, "ARS"), Money.of(BigDecimal.ONE, "USD")))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void plusAddsBothLegs() {
+        PositionValuation first = new PositionValuation(
+                Money.of(new BigDecimal("120.5"), "ARS"), Money.of(new BigDecimal("100"), "ARS"));
+        PositionValuation second = new PositionValuation(
+                Money.of(new BigDecimal("79.5"), "ARS"), Money.of(new BigDecimal("50.25"), "ARS"));
+
+        PositionValuation sum = first.plus(second);
+
+        assertThat(sum.marketValue()).isEqualTo(Money.of(new BigDecimal("200.0"), "ARS"));
+        assertThat(sum.costBasis()).isEqualTo(Money.of(new BigDecimal("150.25"), "ARS"));
+    }
+
+    @Test
+    void plusRejectsAnotherCurrency() {
+        PositionValuation ars = new PositionValuation(Money.of(BigDecimal.ONE, "ARS"), Money.of(BigDecimal.ONE, "ARS"));
+        PositionValuation usd = new PositionValuation(Money.of(BigDecimal.ONE, "USD"), Money.of(BigDecimal.ONE, "USD"));
+
+        assertThatThrownBy(() -> ars.plus(usd)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aManualQuoteIsReadInTheHoldingsCurrency() {
+        Holding usdStock = new Holding(new HoldingId(2L), new UserId(1L), new BankNumber("017"), new Ticker("AAPL"),
+                "Apple", AssetType.STOCK, new HoldingQuantity(BigDecimal.TEN),
+                Money.of(new BigDecimal("150"), "USD"), ThresholdConfig.disabled(),
+                NotificationTimestamps.empty(), NOW, NOW);
+
+        Money proceeds = usdStock.saleProceeds(new ManualQuote(new BigDecimal("200")),
+                new HoldingQuantity(new BigDecimal("4")));
+
+        assertThat(proceeds.currency().getCurrencyCode()).isEqualTo("USD");
+        assertThat(proceeds.amount()).isEqualByComparingTo("800");
+    }
+
+    @Test
+    void aBondsManualQuoteIsPerHundredNominal() {
+        Money proceeds = holding(AssetType.BOND, "687", "1435.78")
+                .saleProceeds(new ManualQuote(new BigDecimal("131700")), new HoldingQuantity(new BigDecimal("100")));
+
+        assertThat(proceeds).isEqualTo(Money.of(new BigDecimal("131700.00"), "ARS"));
     }
 }

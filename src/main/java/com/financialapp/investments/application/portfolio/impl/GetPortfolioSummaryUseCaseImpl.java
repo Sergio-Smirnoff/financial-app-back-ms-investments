@@ -71,13 +71,11 @@ public class GetPortfolioSummaryUseCaseImpl implements GetPortfolioSummaryUseCas
     }
 
     private static PositionValuation valuationOf(List<HoldingWithPriceResult> items, Currency currency) {
-        BigDecimal value = BigDecimal.ZERO;
-        BigDecimal cost = BigDecimal.ZERO;
-        for (HoldingWithPriceResult item : items) {
-            value = value.add(item.currentValue());
-            cost = cost.add(item.holding().costBasis().amount());
-        }
-        return new PositionValuation(new Money(value, currency), new Money(cost, currency));
+        Money zero = Money.zero(currency.getCurrencyCode());
+        return items.stream()
+                .map(item -> new PositionValuation(
+                        new Money(item.currentValue(), currency), item.holding().costBasis()))
+                .reduce(new PositionValuation(zero, zero), PositionValuation::plus);
     }
 
     private static BigDecimal shareOf(Money part, Money total) {
