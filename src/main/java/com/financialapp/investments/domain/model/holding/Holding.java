@@ -3,6 +3,7 @@ package com.financialapp.investments.domain.model.holding;
 import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
+import com.financialapp.investments.domain.exception.holding.HoldingSaleExceedsQuantityException;
 import com.financialapp.investments.domain.model.price.AssetType;
 
 import java.time.LocalDateTime;
@@ -30,7 +31,8 @@ public record Holding(
         Objects.requireNonNull(assetType, "assetType must not be null");
         Objects.requireNonNull(quantity, "quantity must not be null");
         Objects.requireNonNull(avgPurchasePrice, "avgPurchasePrice must not be null");
-        Objects.requireNonNull(notificationTimestamps, "notificationTimestamps must not be null — use NotificationTimestamps.empty()");
+        Objects.requireNonNull(notificationTimestamps,
+                "notificationTimestamps must not be null — use NotificationTimestamps.empty()");
     }
 
     public static Holding create(UserId userId, BankNumber bankNumber, Ticker ticker, String name,
@@ -47,7 +49,32 @@ public record Holding(
     }
 
     public Money costBasis() {
-        return avgPurchasePrice.multiply(quantity.value());
+        return costBasisOf(quantity);
+    }
+
+    public Money costBasisOf(HoldingQuantity sold) {
+        return avgPurchasePrice.multiply(sold.value());
+    }
+
+    public Money saleProceeds(Money quote, HoldingQuantity sold) {
+        return new Money(assetType.marketValue(quote.amount(), sold.value()), quote.currency());
+    }
+
+    public Money saleProceeds(ManualQuote quote, HoldingQuantity sold) {
+        return saleProceeds(new Money(quote.value(), avgPurchasePrice.currency()), sold);
+    }
+
+    public boolean isFullySoldBy(HoldingQuantity sold) {
+        return sold.value().compareTo(quantity.value()) == 0;
+    }
+
+    public Holding afterSelling(HoldingQuantity sold) {
+        if (sold.value().compareTo(quantity.value()) > 0) {
+            throw new HoldingSaleExceedsQuantityException(sold, quantity);
+        }
+        return new Holding(id, userId, bankNumber, ticker, name, assetType,
+                new HoldingQuantity(quantity.value().subtract(sold.value())), avgPurchasePrice,
+                thresholdConfig, notificationTimestamps, createdAt, LocalDateTime.now());
     }
 
     public Money unitPrice(Money quote) {
@@ -55,7 +82,7 @@ public record Holding(
     }
 
     public Money marketValue(Money quote) {
-        return new Money(assetType.marketValue(quote.amount(), quantity.value()), quote.currency());
+        return saleProceeds(quote, quantity);
     }
 
     public PositionValuation valuation(Money quote) {

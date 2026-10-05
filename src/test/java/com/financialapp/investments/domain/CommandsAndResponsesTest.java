@@ -8,17 +8,19 @@ import com.financialapp.investments.domain.common.model.UserId;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
+import com.financialapp.investments.domain.model.holding.ManualQuote;
 import com.financialapp.investments.domain.model.holding.NotificationTimestamps;
 import com.financialapp.investments.domain.model.holding.ThresholdConfig;
 import com.financialapp.investments.domain.model.holding.Ticker;
 import com.financialapp.investments.domain.model.price.AssetType;
-import com.financialapp.investments.domain.usecase.holding.command.CloseHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.command.CreateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.command.GetAccountValuationCommand;
 import com.financialapp.investments.domain.usecase.holding.command.GetHoldingDetailCommand;
 import com.financialapp.investments.domain.usecase.holding.command.ListHoldingsCommand;
+import com.financialapp.investments.domain.usecase.holding.command.SellHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.command.UpdateHoldingCommand;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.model.history.HistoricalPricePoint;
 import com.financialapp.investments.domain.model.history.PriceSeries;
 import com.financialapp.investments.domain.model.market.PriceRange;
@@ -62,8 +64,11 @@ class CommandsAndResponsesTest {
 
     @Test
     void holdingCommands_accessors() {
-        CloseHoldingCommand c = new CloseHoldingCommand(USER, HID, ACC);
+        SellHoldingCommand c = new SellHoldingCommand(USER, HID, QTY, new ManualQuote(new BigDecimal("200")), ACC);
         assertThat(c.destinationCbu()).isEqualTo(ACC);
+        assertThat(c.manualQuote().value()).isEqualByComparingTo("200");
+        assertThat(new HoldingSaleResult(ARS, ARS, QTY, null).closed()).isTrue();
+        assertThat(new HoldingSaleResult(ARS, ARS, QTY, QTY).closed()).isFalse();
 
         CreateHoldingCommand cr = new CreateHoldingCommand(USER, BANK, TIC, "n",
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
@@ -74,7 +79,8 @@ class CommandsAndResponsesTest {
                 AssetType.STOCK, QTY, ARS, ThresholdConfig.disabled(), ACC);
         assertThat(up.newQuantity()).isEqualTo(QTY);
 
-        GetAccountValuationCommand g = new GetAccountValuationCommand(USER, BANK, java.util.Currency.getInstance("ARS"));
+        GetAccountValuationCommand g = new GetAccountValuationCommand(
+                USER, BANK, java.util.Currency.getInstance("ARS"));
         assertThat(g.bankNumber()).isEqualTo(BANK);
 
         GetHoldingDetailCommand d = new GetHoldingDetailCommand(USER, HID);
@@ -126,7 +132,8 @@ class CommandsAndResponsesTest {
                 LocalDateTime.of(2026, 6, 12, 10, 0)
         );
 
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(quote), new PriceSeries(List.of(point)));
+        TickerResearchResult result = new TickerResearchResult(
+                TIC, Optional.of(quote), new PriceSeries(List.of(point)));
         assertThat(result.ticker()).isEqualTo(TIC);
         assertThat(result.currentQuote()).isPresent();
         assertThat(result.currentQuote().get()).isEqualTo(quote);
@@ -188,14 +195,21 @@ class CommandsAndResponsesTest {
 
     @Test
     void allocationBreakdownResult_nullChecks() {
-        assertThatThrownBy(() -> new AllocationBreakdownResult(null, ARS, BigDecimal.ZERO))
+        assertThatThrownBy(() -> new AllocationBreakdownResult(null, ARS, ARS, ARS, BigDecimal.ZERO, 1))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, null, BigDecimal.ZERO))
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, null, ARS, ARS, BigDecimal.ZERO, 1))
                 .isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, null))
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, null, ARS, BigDecimal.ZERO, 1))
                 .isInstanceOf(NullPointerException.class);
-        AllocationBreakdownResult ok = new AllocationBreakdownResult(AssetType.STOCK, ARS, BigDecimal.ONE);
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, null, BigDecimal.ZERO, 1))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, ARS, null, 1))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, ARS, BigDecimal.ONE, -1))
+                .isInstanceOf(IllegalArgumentException.class);
+        AllocationBreakdownResult ok = new AllocationBreakdownResult(AssetType.STOCK, ARS, ARS, ARS, BigDecimal.ONE, 2);
         assertThat(ok.assetType()).isEqualTo(AssetType.STOCK);
+        assertThat(ok.count()).isEqualTo(2);
     }
 
     @Test

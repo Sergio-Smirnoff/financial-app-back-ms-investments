@@ -11,12 +11,14 @@ import com.financialapp.investments.domain.gateway.DomainEventPublisher;
 import com.financialapp.investments.domain.gateway.FinancesGateway;
 import com.financialapp.investments.domain.model.holding.*;
 import com.financialapp.investments.domain.model.price.AssetType;
+import com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
+import com.financialapp.investments.domain.service.BrokerFeeNetting;
 import com.financialapp.investments.domain.usecase.holding.command.CreateHoldingCommand;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,14 +44,19 @@ class CreateHoldingUseCaseImplTest {
     @Mock
     private DomainEventPublisher eventPublisher;
     @Mock
-    private com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
+    private BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
-    @InjectMocks
     private CreateHoldingUseCaseImpl useCase;
 
     private static final UserId USER_ID = new UserId(1L);
     private static final BankNumber BANK_NUMBER = new BankNumber("007");
     private static final Cbu FUNDING_CBU = new Cbu("0070009000000000000099");
+
+    @BeforeEach
+    void setUp() {
+        useCase = new CreateHoldingUseCaseImpl(holdingRepository, financesGateway, eventPublisher,
+                brokerFeeScheduleRepository, new BrokerFeeNetting());
+    }
 
     @Test
     void create_savesHoldingAndPublishesEvent() {

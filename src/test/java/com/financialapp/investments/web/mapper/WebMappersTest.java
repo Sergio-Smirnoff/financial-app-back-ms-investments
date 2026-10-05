@@ -12,6 +12,7 @@ import com.financialapp.investments.domain.usecase.market.response.TickerSearchR
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.model.price.PriceDetail;
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.model.history.PriceSeries;
 import com.financialapp.investments.domain.usecase.market.response.MarketDiscoveryResult;
 import com.financialapp.investments.domain.usecase.market.response.MarketOpportunityResult;
@@ -24,6 +25,7 @@ import com.financialapp.investments.domain.usecase.portfolio.response.PortfolioS
 import com.financialapp.investments.web.dto.response.AccountValuationResponse;
 import com.financialapp.investments.web.dto.response.HoldingDetailResponse;
 import com.financialapp.investments.web.dto.response.HoldingResponse;
+import com.financialapp.investments.web.dto.response.HoldingSaleResponse;
 import com.financialapp.investments.web.dto.response.HoldingWithPriceResponse;
 import com.financialapp.investments.web.dto.response.MarketDiscoveryResponse;
 import com.financialapp.investments.web.dto.response.PortfolioEvolutionResponse;
@@ -154,7 +156,9 @@ class WebMappersTest {
 
     @Test
     void portfolioMapper_toResponse_includesBreakdownAndNullBreakdown() {
-        AllocationBreakdownResult brk = new AllocationBreakdownResult(AssetType.STOCK, PRICE, new BigDecimal("100.00"));
+        AllocationBreakdownResult brk = new AllocationBreakdownResult(AssetType.STOCK, PRICE,
+                Money.of(new BigDecimal("80.00"), "ARS"), Money.of(new BigDecimal("20.00"), "ARS"),
+                new BigDecimal("100.00"), 3);
         CurrencyTotals withBrk = new CurrencyTotals(PRICE, PRICE, PRICE, new BigDecimal("0.00"), List.of(brk));
         CurrencyTotals empty = new CurrencyTotals(PRICE, PRICE, PRICE, new BigDecimal("0.00"), null);
         PortfolioSummaryResult result = new PortfolioSummaryResult(List.of(withBrk, empty));
@@ -168,6 +172,9 @@ class WebMappersTest {
         assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getAssetType()).isEqualTo("STOCK");
         assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getTotalValue()).isEqualTo("100.00");
         assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getPercentage()).isEqualTo("100.00");
+        assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getTotalCost()).isEqualTo("80.00");
+        assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getTotalPl()).isEqualTo("20.00");
+        assertThat(r.getByCurrency().get(0).getBreakdown().get(0).getCount()).isEqualTo(3);
         assertThat(r.getByCurrency().get(1).getBreakdown()).isEmpty();
     }
 
@@ -279,7 +286,8 @@ class WebMappersTest {
                 new BigDecimal("150.00"), new BigDecimal("143.00"),
                 new BigDecimal("900"), new BigDecimal("2.00"), "USD",
                 NOW.minusDays(1));
-        TickerResearchResult result = new TickerResearchResult(TIC, Optional.of(detail), new PriceSeries(List.of(point)));
+        TickerResearchResult result = new TickerResearchResult(
+                TIC, Optional.of(detail), new PriceSeries(List.of(point)));
         TickerResearchResponse r = new MarketWebMapper().toResearchResponse(result);
         assertThat(r.getTicker()).isEqualTo("AAPL");
         assertThat(r.getCurrency()).isEqualTo("USD");
@@ -299,5 +307,26 @@ class WebMappersTest {
         assertThat(r.getCurrentPrice()).isNull();
         assertThat(r.getVariation()).isNull();
         assertThat(r.getSeries()).isEmpty();
+    }
+
+    @Test
+    void holdingSale_mapsAPartialAndAFullSale() {
+        HoldingSaleResult part = new HoldingSaleResult(
+                Money.of(new BigDecimal("800"), "ARS"), Money.of(new BigDecimal("790"), "ARS"),
+                new HoldingQuantity(new BigDecimal("4")), new HoldingQuantity(new BigDecimal("6")));
+        HoldingSaleResult all = new HoldingSaleResult(
+                Money.of(new BigDecimal("800"), "USD"), Money.of(new BigDecimal("800"), "USD"),
+                new HoldingQuantity(new BigDecimal("4")), null);
+
+        HoldingSaleResponse partResponse = holdingMapper.toSaleResponse(7L, part);
+        HoldingSaleResponse allResponse = holdingMapper.toSaleResponse(7L, all);
+
+        assertThat(partResponse.getHoldingId()).isEqualTo(7L);
+        assertThat(partResponse.getRemainingQuantity()).isEqualTo("6");
+        assertThat(partResponse.getBookedAmount()).isEqualTo("790");
+        assertThat(partResponse.isClosed()).isFalse();
+        assertThat(allResponse.getRemainingQuantity()).isEqualTo("0");
+        assertThat(allResponse.getCurrency()).isEqualTo("USD");
+        assertThat(allResponse.isClosed()).isTrue();
     }
 }

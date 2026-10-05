@@ -38,6 +38,10 @@ public record Money(BigDecimal amount, Currency currency) {
         return new Money(this.amount.negate(), this.currency);
     }
 
+    public boolean isPositive() {
+        return this.amount.signum() > 0;
+    }
+
     private void requireSameCurrency(Money other) {
         if (!this.currency.equals(other.currency)) {
             throw new IllegalArgumentException(

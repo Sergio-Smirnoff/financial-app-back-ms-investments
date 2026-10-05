@@ -1,6 +1,7 @@
 package com.financialapp.investments.web.mapper;
 
 import com.financialapp.investments.domain.usecase.holding.response.AccountValuationResult;
+import com.financialapp.investments.domain.usecase.holding.response.HoldingSaleResult;
 import com.financialapp.investments.domain.usecase.portfolio.response.HoldingWithPriceResult;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.NotificationTimestamps;
@@ -8,6 +9,7 @@ import com.financialapp.investments.domain.model.holding.ThresholdConfig;
 import com.financialapp.investments.web.dto.response.AccountValuationResponse;
 import com.financialapp.investments.web.dto.response.HoldingDetailResponse;
 import com.financialapp.investments.web.dto.response.HoldingResponse;
+import com.financialapp.investments.web.dto.response.HoldingSaleResponse;
 import com.financialapp.investments.web.dto.response.HoldingWithPriceResponse;
 import org.springframework.stereotype.Component;
 
@@ -94,6 +96,18 @@ public class HoldingWebMapper {
                 .bankNumber(result.bankNumber().value())
                 .totalValuation(toPlain(result.totalValuation().amount()))
                 .currency(result.totalValuation().currency().getCurrencyCode())
+                .build();
+    }
+
+    public HoldingSaleResponse toSaleResponse(Long holdingId, HoldingSaleResult sale) {
+        return HoldingSaleResponse.builder()
+                .holdingId(holdingId)
+                .soldQuantity(toPlain(sale.soldQuantity().value()))
+                .remainingQuantity(sale.closed() ? "0" : toPlain(sale.remainingQuantity().value()))
+                .proceeds(toPlain(sale.proceeds().amount()))
+                .bookedAmount(toPlain(sale.bookedAmount().amount()))
+                .currency(sale.bookedAmount().currency().getCurrencyCode())
+                .closed(sale.closed())
                 .build();
     }
 }

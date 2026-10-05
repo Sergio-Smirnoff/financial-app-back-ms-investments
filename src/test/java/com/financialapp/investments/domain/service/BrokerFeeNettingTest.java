@@ -32,6 +32,16 @@ class BrokerFeeNettingTest {
     }
 
     @Test
+    void nullSchedule_roundsAFractionalGrossToCents() {
+        Money gross = Money.of(new BigDecimal("70.861"), "ARS");
+        NetPositionResult result = feeNetting.apply(gross, gross, null, TradeSide.SELL);
+
+        assertThat(result.netMagnitude()).isEqualTo(Money.of(new BigDecimal("70.86"), "ARS"));
+        assertThat(result.totalFee()).isEqualTo(Money.zero("ARS"));
+        assertThat(result.feeExceedsGross()).isFalse();
+    }
+
+    @Test
     void buySideFee_calculatesPercentageAndMarketFee() {
         Money gross = Money.of(new BigDecimal("10000.00"), "ARS");
         BrokerFeeSchedule schedule = new BrokerFeeSchedule(

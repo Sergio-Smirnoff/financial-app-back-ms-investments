@@ -21,17 +21,22 @@ public final class BrokerFeeNetting {
         String currency = grossMagnitude.currency().getCurrencyCode();
 
         if (schedule == null) {
-            return new NetPositionResult(Money.zero(currency), grossMagnitude, false);
+            return new NetPositionResult(
+                    Money.zero(currency), Money.of(toCents(grossMagnitude.amount()), currency), false);
         }
 
         Money baseTradeValue = tradeValue != null ? tradeValue : grossMagnitude;
         BigDecimal tradeValAmount = baseTradeValue.amount();
 
         BigDecimal sidePct = (side == TradeSide.BUY ? schedule.buyFeePct() : schedule.sellFeePct());
-        BigDecimal sideFeeAmount = sidePct != null ? tradeValAmount.multiply(sidePct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN) : BigDecimal.ZERO;
+        BigDecimal sideFeeAmount = sidePct != null
+                ? tradeValAmount.multiply(sidePct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN)
+                : BigDecimal.ZERO;
 
         BigDecimal marketPct = schedule.marketFeePct();
-        BigDecimal marketFeeAmount = marketPct != null ? tradeValAmount.multiply(marketPct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN) : BigDecimal.ZERO;
+        BigDecimal marketFeeAmount = marketPct != null
+                ? tradeValAmount.multiply(marketPct).divide(HUNDRED, 4, RoundingMode.HALF_EVEN)
+                : BigDecimal.ZERO;
 
         BigDecimal rawFeeAmount = sideFeeAmount.add(marketFeeAmount);
 
@@ -47,14 +52,18 @@ public final class BrokerFeeNetting {
             rawFeeAmount = rawFeeAmount.add(ivaAmount);
         }
 
-        BigDecimal totalFeeAmount = rawFeeAmount.setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal totalFeeAmount = toCents(rawFeeAmount);
         Money totalFee = Money.of(totalFeeAmount, currency);
 
         BigDecimal grossAmount = grossMagnitude.amount();
         boolean feeExceedsGross = totalFeeAmount.compareTo(grossAmount) > 0;
-        BigDecimal netAmount = grossAmount.subtract(totalFeeAmount).abs().setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal netAmount = toCents(grossAmount.subtract(totalFeeAmount).abs());
         Money netMagnitude = Money.of(netAmount, currency);
 
         return new NetPositionResult(totalFee, netMagnitude, feeExceedsGross);
+    }
+
+    private static BigDecimal toCents(BigDecimal amount) {
+        return amount.setScale(2, RoundingMode.HALF_EVEN);
     }
 }

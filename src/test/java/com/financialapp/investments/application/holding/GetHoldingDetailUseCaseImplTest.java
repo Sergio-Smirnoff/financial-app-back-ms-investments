@@ -11,12 +11,14 @@ import com.financialapp.investments.domain.model.price.AssetPrice;
 import com.financialapp.investments.domain.model.price.AssetPriceId;
 import com.financialapp.investments.domain.model.price.AssetType;
 import com.financialapp.investments.domain.repository.AssetPriceRepository;
+import com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository;
 import com.financialapp.investments.domain.repository.HoldingRepository;
+import com.financialapp.investments.domain.service.BrokerFeeNetting;
 import com.financialapp.investments.domain.usecase.holding.command.GetHoldingDetailCommand;
 import com.financialapp.investments.domain.usecase.portfolio.response.HoldingWithPriceResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,12 +40,17 @@ class GetHoldingDetailUseCaseImplTest {
     @Mock
     private AssetPriceRepository assetPriceRepository;
     @Mock
-    private com.financialapp.investments.domain.repository.BrokerFeeScheduleRepository brokerFeeScheduleRepository;
+    private BrokerFeeScheduleRepository brokerFeeScheduleRepository;
 
-    @InjectMocks
     private GetHoldingDetailUseCaseImpl useCase;
 
     private static final UserId USER_ID = new UserId(1L);
+
+    @BeforeEach
+    void setUp() {
+        useCase = new GetHoldingDetailUseCaseImpl(holdingRepository, assetPriceRepository, brokerFeeScheduleRepository,
+                new BrokerFeeNetting());
+    }
 
     @Test
     void execute_computesPlCorrectly() {

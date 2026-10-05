@@ -9,11 +9,19 @@ import java.util.Objects;
 public record AllocationBreakdownResult(
         AssetType assetType,
         Money totalValue,
-        BigDecimal percentage
+        Money totalCost,
+        Money totalPl,
+        BigDecimal percentage,
+        int count
 ) {
     public AllocationBreakdownResult {
         Objects.requireNonNull(assetType, "assetType must not be null");
         Objects.requireNonNull(totalValue, "totalValue must not be null");
+        Objects.requireNonNull(totalCost, "totalCost must not be null");
+        Objects.requireNonNull(totalPl, "totalPl must not be null");
         Objects.requireNonNull(percentage, "percentage must not be null");
+        if (count < 0) {
+            throw new IllegalArgumentException("count must not be negative");
+        }
     }
 }

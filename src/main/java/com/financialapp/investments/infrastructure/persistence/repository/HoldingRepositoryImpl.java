@@ -41,6 +41,12 @@ public class HoldingRepositoryImpl implements HoldingRepository, HoldingQueryGat
     }
 
     @Override
+    public Optional<Holding> findByIdAndUserIdForUpdate(HoldingId id, UserId userId) {
+        return jpaRepository.findByIdAndUserIdForUpdate(id.value(), userId.value())
+                .map(mapper::toDomain);
+    }
+
+    @Override
     public PageResult<Holding> findFiltered(HoldingFilter filter, PageRequest pageRequest) {
         var springPage = org.springframework.data.domain.PageRequest.of(
                 pageRequest.page(), pageRequest.size());
