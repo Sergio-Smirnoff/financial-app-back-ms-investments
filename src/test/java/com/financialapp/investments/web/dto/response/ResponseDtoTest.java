@@ -22,10 +22,14 @@ class ResponseDtoTest {
         assertThat(a.getCurrency()).isEqualTo("ARS");
 
         AllocationBreakdown b = AllocationBreakdown.builder()
-                .assetType("STOCK").totalValue("1").percentage("10").build();
+                .assetType("STOCK").totalValue("1").totalCost("0.80").totalPl("0.20")
+                .percentage("10").count(2).build();
         assertThat(b.getAssetType()).isEqualTo("STOCK");
         assertThat(b.getTotalValue()).isEqualTo("1");
+        assertThat(b.getTotalCost()).isEqualTo("0.80");
+        assertThat(b.getTotalPl()).isEqualTo("0.20");
         assertThat(b.getPercentage()).isEqualTo("10");
+        assertThat(b.getCount()).isEqualTo(2);
 
         CurrencyTotalsByDay d = CurrencyTotalsByDay.builder()
                 .currency("USD").totalValue("1.50").build();

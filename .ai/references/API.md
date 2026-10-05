@@ -9,9 +9,10 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 |---|---|---|---|
 | GET | `/api/v1/investments/holdings` | List user holdings (optional `?assetType=`) | — |
 | GET | `/api/v1/investments/holdings/valuation` | Derived investment read-model valuation (`?bankNumber=&currency=`) | `invalid_bank_number`, `invalid_currency` |
-| POST | `/api/v1/investments/holdings` | Create holding (records buy transaction in ms-finances if `fundingCbu` set) | `resource_already_exists`, `invalid_ticker`, `finances_service_unavailable` |
-| PUT | `/api/v1/investments/holdings/{id}` | Update ticker, asset type, quantity, average purchase price or thresholds | `resource_not_found`, `invalid_quantity` |
-| DELETE | `/api/v1/investments/holdings/{id}` | Close/sell holding (records proceeds in ms-finances if `destinationCbu` set) | `resource_not_found`, `finances_service_unavailable` |
+| POST | `/api/v1/investments/holdings` | Create holding (records buy transaction in ms-finances if `fundingCbu` set). `quantity` and `avgPurchasePrice` (decimal, number or string) must fit the NUMERIC(18,6) columns: at most 12 integer digits and 6 decimals, trailing zeros included (send normalised values); `notifyGainThresholdPct` and `notifyLossThresholdPct` (optional) must fit NUMERIC(5,2): at most 3 integer digits and 2 decimals (max 999.99); else 400 `validation_error` | `validation_error`, `resource_already_exists`, `invalid_ticker`, `finances_service_unavailable` |
+| PUT | `/api/v1/investments/holdings/{id}` | Update ticker, asset type, quantity, average purchase price or thresholds. Same body and constraints as create: `quantity` and `avgPurchasePrice` (decimal, number or string) must fit the NUMERIC(18,6) columns: at most 12 integer digits and 6 decimals, trailing zeros included (send normalised values); `notifyGainThresholdPct` and `notifyLossThresholdPct` (optional) must fit NUMERIC(5,2): at most 3 integer digits and 2 decimals (max 999.99); else 400 `validation_error` | `validation_error`, `resource_not_found`, `invalid_quantity` |
+| DELETE | `/api/v1/investments/holdings/{id}` | Close/sell every unit at the market price (same use case as `POST …/sell`; records proceeds in ms-finances if `destinationCbu` set) | `resource_not_found`, `finances_service_unavailable` |
+| POST | `/api/v1/investments/holdings/{id}/sell` | Sell part or all of a holding. Body `{quantity, price?, destinationCbu?}` (`quantity` and `price` are decimals, number or string, each at most 12 integer digits and 6 decimals to fit NUMERIC(18,6), else 400 `validation_error`; trailing zeros count toward the 6 decimals (`"1.2340000"` is rejected), so send normalised values): `price` absent → stored market quote (cost fallback), present → that quote in the holding's currency (bonds: per 100 VN, like the market quote). Books `quantity × price`, net of the broker fee schedule, to `destinationCbu` in ms-finances; a partial sale keeps the average cost; selling every unit deletes the holding. A sale whose net proceeds are 0 (fee ≥ gross, or rounds to 0.00) still sells but books nothing in ms-finances (`bookedAmount` 0). → `{holdingId, soldQuantity, remainingQuantity, proceeds, bookedAmount, currency, closed}` | `validation_error`, `resource_not_found`, `holding_sale_exceeds_quantity`, `finances_service_unavailable` |
 | GET | `/api/v1/investments/portfolio/summary` | Aggregated portfolio valuation, total P&L, allocation breakdown | — |
 | GET | `/api/v1/investments/portfolio/holdings` | List holdings enriched with live prices and P&L % | — |
 | GET | `/api/v1/investments/portfolio/holdings/{id}` | Single holding detail with live price and P&L % | `resource_not_found` |
@@ -34,6 +35,7 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 - Position values and sale proceeds follow the per-100 rule for `BOND` (see `DOMAIN.md` § Valuation rule); every other type is per unit.
 - `positions/search` `marketValue` is the position's cost basis (`Holding.costBasis`), not a live value.
 - `HoldingWithPriceResult.currentPrice` (holdings and portfolio-holdings `currentPrice`): for a bond it is the raw per-100 quote when a price exists, but the per-1 average cost when no price exists (pre-existing). Clients must not derive values from it; use the returned `marketValue` and P&L fields.
+- `portfolio/summary` `byCurrency[].breakdown[]` entry: `assetType`, `totalValue`, `totalCost`, `totalPl`, `percentage` (decimal strings, in the bucket's currency; `totalPl = totalValue − totalCost`, `percentage` = share of the bucket's `totalValue`) and `count` (integer, holdings of that type in the bucket). ms-gateway reads `totalCost` and `count` strictly — deploy this service before a gateway that reads them.
 
 ## DomainError catalog
 
@@ -44,6 +46,7 @@ mapping: parent `.ai/references/APP_STRUCTURE.md` — not repeated here.
 | `resource_conflict` | 409 | Operation conflicts with current holding state |
 | `holding_quantity_non_positive` | 422 | Quantity is zero or negative |
 | `holding_currency_mismatch` | 422 | Purchase currency differs from existing asset currency |
+| `holding_sale_exceeds_quantity` | 422 | A sell asks for more units than the holding has |
 | `invalid_ticker` | 400 | Ticker symbol contains invalid characters |
 | `invalid_bank_number` | 400 | Bank number is not 3 digits |
 | `invalid_fee_schedule` | 400 | Fee percentage outside `[0, 100]` |

@@ -83,4 +83,11 @@ class MoneyTest {
         Money m = new Money(new BigDecimal("100"), ARS);
         assertThat(m.negate().amount()).isEqualByComparingTo(new BigDecimal("-100"));
     }
+
+    @Test
+    void isPositive_onlyForAmountsAboveZero() {
+        assertThat(new Money(new BigDecimal("0.01"), ARS).isPositive()).isTrue();
+        assertThat(new Money(new BigDecimal("0.00"), ARS).isPositive()).isFalse();
+        assertThat(new Money(new BigDecimal("-1"), ARS).isPositive()).isFalse();
+    }
 }

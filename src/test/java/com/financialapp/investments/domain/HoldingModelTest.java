@@ -3,6 +3,7 @@ package com.financialapp.investments.domain;
 import com.financialapp.investments.domain.common.model.BankNumber;
 import com.financialapp.investments.domain.common.model.Money;
 import com.financialapp.investments.domain.common.model.UserId;
+import com.financialapp.investments.domain.exception.holding.HoldingSaleExceedsQuantityException;
 import com.financialapp.investments.domain.model.holding.Holding;
 import com.financialapp.investments.domain.model.holding.HoldingId;
 import com.financialapp.investments.domain.model.holding.HoldingQuantity;
@@ -118,5 +119,65 @@ class HoldingModelTest {
         NotificationTimestamps lossed = gained.withLossNotifiedAt(NOW);
         assertThat(lossed.lastLossNotifiedAt()).isEqualTo(NOW);
         assertThat(lossed.lastGainNotifiedAt()).isEqualTo(NOW);
+    }
+
+    private Holding tenAt150() {
+        return new Holding(new HoldingId(1L), USER, ACC, TIC, "Apple",
+                AssetType.STOCK, new HoldingQuantity(new BigDecimal("10")),
+                Money.of(new BigDecimal("150"), "ARS"), ThresholdConfig.disabled(),
+                NotificationTimestamps.empty(), NOW, NOW);
+    }
+
+    @Test
+    void sellingPart_lowersTheQuantity_andKeepsTheAverageCost() {
+        Holding remaining = tenAt150().afterSelling(new HoldingQuantity(new BigDecimal("4")));
+
+        assertThat(remaining.quantity().value()).isEqualByComparingTo("6");
+        assertThat(remaining.avgPurchasePrice().amount()).isEqualByComparingTo("150");
+        assertThat(remaining.id()).isEqualTo(new HoldingId(1L));
+        assertThat(remaining.createdAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void sellingEveryUnit_isAFullSale() {
+        Holding holding = tenAt150();
+
+        assertThat(holding.isFullySoldBy(new HoldingQuantity(new BigDecimal("10.000")))).isTrue();
+        assertThat(holding.isFullySoldBy(new HoldingQuantity(new BigDecimal("4")))).isFalse();
+    }
+
+    @Test
+    void sellingMoreThanHeld_throws() {
+        assertThatThrownBy(() -> tenAt150().afterSelling(new HoldingQuantity(new BigDecimal("11"))))
+                .isInstanceOf(HoldingSaleExceedsQuantityException.class)
+                .hasMessage("Cannot sell 11 units of a holding of 10");
+    }
+
+    @Test
+    void saleProceeds_areQuoteTimesQuantity_andPerHundredNominalForBonds() {
+        Holding bond = new Holding(new HoldingId(2L), USER, ACC, new Ticker("AO29"), "Bono 2029",
+                AssetType.BOND, new HoldingQuantity(new BigDecimal("687")),
+                Money.of(new BigDecimal("1435.78"), "ARS"), ThresholdConfig.disabled(),
+                NotificationTimestamps.empty(), NOW, NOW);
+
+        assertThat(tenAt150().saleProceeds(
+                Money.of(new BigDecimal("200"), "ARS"), new HoldingQuantity(new BigDecimal("4"))).amount())
+                .isEqualByComparingTo("800");
+        assertThat(bond.saleProceeds(
+                Money.of(new BigDecimal("131700"), "ARS"), new HoldingQuantity(new BigDecimal("100"))).amount())
+                .isEqualByComparingTo("131700");
+        assertThat(bond.marketValue(Money.of(new BigDecimal("131700"), "ARS")).amount())
+                .isEqualByComparingTo("904779.00");
+    }
+
+    @Test
+    void costBasisOf_isAverageCostTimesSoldQuantity_andCostBasisIsTheWholePosition() {
+        Holding holding = tenAt150();
+
+        Money soldCost = holding.costBasisOf(new HoldingQuantity(new BigDecimal("4")));
+
+        assertThat(soldCost.amount()).isEqualByComparingTo("600");
+        assertThat(soldCost.currency().getCurrencyCode()).isEqualTo("ARS");
+        assertThat(holding.costBasis()).isEqualTo(holding.costBasisOf(holding.quantity()));
     }
 }

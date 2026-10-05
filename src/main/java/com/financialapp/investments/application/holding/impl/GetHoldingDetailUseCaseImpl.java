@@ -31,6 +31,7 @@ public class GetHoldingDetailUseCaseImpl implements GetHoldingDetailUseCase {
     private final HoldingRepository holdingRepository;
     private final AssetPriceRepository assetPriceRepository;
     private final BrokerFeeScheduleRepository brokerFeeScheduleRepository;
+    private final BrokerFeeNetting brokerFeeNetting;
 
     @Override
     public HoldingWithPriceResult execute(GetHoldingDetailCommand command) {
@@ -49,21 +50,21 @@ public class GetHoldingDetailUseCaseImpl implements GetHoldingDetailUseCase {
         return computeResult(holding, quote, schedule);
     }
 
-    private static HoldingWithPriceResult computeResult(
+    private HoldingWithPriceResult computeResult(
             Holding holding, Optional<BigDecimal> quote, BrokerFeeSchedule schedule) {
         Currency currency = holding.avgPurchasePrice().currency();
         PositionValuation gross = quote
                 .map(price -> holding.valuation(new Money(price, currency)))
                 .orElseGet(holding::valuationAtCost);
 
-        BrokerFeeNetting feeNetting = new BrokerFeeNetting();
-
-        NetPositionResult buyNet = feeNetting.apply(gross.costBasis(), gross.costBasis(), schedule, TradeSide.BUY);
+        NetPositionResult buyNet = brokerFeeNetting.apply(
+                gross.costBasis(), gross.costBasis(), schedule, TradeSide.BUY);
         Money netCostBasis = buyNet.totalFee().amount().signum() > 0
                 ? gross.costBasis().add(buyNet.totalFee())
                 : gross.costBasis();
 
-        NetPositionResult sellNet = feeNetting.apply(gross.marketValue(), gross.marketValue(), schedule, TradeSide.SELL);
+        NetPositionResult sellNet = brokerFeeNetting.apply(
+                gross.marketValue(), gross.marketValue(), schedule, TradeSide.SELL);
         Money netMarketValue = sellNet.feeExceedsGross()
                 ? Money.zero(currency.getCurrencyCode())
                 : sellNet.netMagnitude();
